@@ -8,8 +8,10 @@ on:
 
 jobs:
   build:
-    name: Build Signed APK
+    name: Build Debug APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create GitHub Releases
 
     steps:
       # ── 1. Checkout code ─────────────────────────────────────
@@ -32,41 +34,28 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ hashFiles('**/*.gradle.kts') }}
 
-      # ── 4. Decode keystore from GitHub secret ────────────────
-      - name: Decode keystore
-        run: |
-          mkdir -p app/keystore
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore/mediconnectug.jks
-
-      # ── 5. Build signed release APK ──────────────────────────
-      - name: Build Release APK
-        env:
-          KEYSTORE_FILE: keystore/mediconnectug.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      # ── 4. Build debug APK (no keystore needed) ───────────────
+      - name: Build Debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleDebug --no-daemon
 
-      # ── 6. Rename APK with version ───────────────────────────
+      # ── 5. Rename APK with version tag ───────────────────────
       - name: Rename APK
         run: |
-          VERSION=$(grep 'versionName' app/build.gradle.kts | grep -oP '"\K[^"]+')
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/MediConnectUG-v${VERSION}.apk
+          mkdir -p release
+          cp app/build/outputs/apk/debug/app-debug.apk release/MediConnectUG-${{ github.ref_name }}.apk
 
-      # ── 7. Upload APK as build artifact ──────────────────────
+      # ── 6. Upload APK as build artifact ──────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediConnectUG-APK
-          path: app/build/outputs/apk/release/MediConnectUG-*.apk
+          path: release/MediConnectUG-*.apk
           retention-days: 30
 
-      # ── 8. Create GitHub Release with APK attached ───────────
+      # ── 7. Create GitHub Release with APK attached ───────────
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: "MediConnectUG ${{ github.ref_name }}"
@@ -77,13 +66,18 @@ jobs:
             1. Download **MediConnectUG-${{ github.ref_name }}.apk** below
             2. On your Android phone: **Settings → Security → Allow unknown sources**
             3. Open the downloaded APK file and tap **Install**
+            4. Open the app and create your account!
 
-            ### What's New
-            - See commit history for changes
+            ### Features
+            - 🩺 AI symptom checker & health triage
+            - 👨‍⚕️ Connect with verified Ugandan doctors
+            - 📅 Book appointments instantly
+            - 🚨 Emergency calling
+            - 💊 Prescription & medication tracking
 
-            ### Requirements
-            - Android 7.0 (API 24) or higher
-          files: app/build/outputs/apk/release/MediConnectUG-*.apk
+            > **Requirements:** Android 7.0 (API 24) or higher
+          files: release/MediConnectUG-*.apk
           draft: false
           prerelease: false
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
