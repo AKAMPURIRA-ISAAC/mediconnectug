@@ -47,7 +47,6 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
     if (exists.rows.length) return res.status(409).json({ success: false, error: 'Email already registered' });
-
     const hash = await bcrypt.hash(password, 10);
     const r = await pool.query(
       'INSERT INTO users (name,email,phone,password_hash) VALUES($1,$2,$3,$4) RETURNING id,name,email,phone',
@@ -57,19 +56,17 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ success: true, token, user });
   } catch (e) {
-    console.error('getDoctors error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-app.post('/api/auth/register'
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ success: false, error: 'email and password are required' });
   try {
     const r = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
     if (!r.rows.length) return res.status(401).json({ success: false, error: 'Invalid credentials' });
-
     const user = r.rows[0];
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
