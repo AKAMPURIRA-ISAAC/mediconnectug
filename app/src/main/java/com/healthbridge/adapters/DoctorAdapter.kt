@@ -19,7 +19,8 @@ data class DoctorItem(
     val reviewCount: Int,
     val distance: String,
     val fee: Int,
-    val isOnline: Boolean = true
+    val isOnline: Boolean = true,
+    val isAvailableToday: Boolean = true
 )
 
 class DoctorAdapter(
@@ -59,6 +60,7 @@ class DoctorAdapter(
         private val tvReviewCount: TextView = itemView.findViewById(R.id.tvReviewCount)
         private val tvDistance: TextView = itemView.findViewById(R.id.tvDistance)
         private val tvFee: TextView = itemView.findViewById(R.id.tvFee)
+        private val tvAvailableBadge: TextView = itemView.findViewById(R.id.tvAvailableBadge)
         private val btnBook: Button = itemView.findViewById(R.id.btnBook)
 
         fun bind(doctor: DoctorItem, onBookClick: (DoctorItem) -> Unit, avatarColor: String) {
@@ -82,10 +84,14 @@ class DoctorAdapter(
             val formatter = NumberFormat.getInstance(Locale.US)
             tvFee.text = "UGX ${formatter.format(doctor.fee)}"
 
+            // Online status dot
             vStatusIndicator.visibility = if (doctor.isOnline) View.VISIBLE else View.GONE
             val dotBg = itemView.context.getDrawable(R.drawable.avatar_circle)?.mutate()
             dotBg?.setTint(if (doctor.isOnline) Color.parseColor("#4CAF50") else Color.parseColor("#BDBDBD"))
             vStatusIndicator.background = dotBg
+
+            // Available Today badge
+            tvAvailableBadge.visibility = if (doctor.isAvailableToday) View.VISIBLE else View.GONE
 
             btnBook.setOnClickListener { onBookClick(doctor) }
         }

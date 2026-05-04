@@ -136,6 +136,22 @@
             app:layout_constraintTop_toTopOf="@id/tvDistance"
             app:layout_constraintBottom_toBottomOf="@id/tvDistance" />
 
+        <TextView
+            android:id="@+id/tvAvailableBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✓ Available"
+            android:textColor="#2E7D32"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:background="@drawable/chip_background"
+            android:backgroundTint="#E8F5E9"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/tvAvatarInitials" />
+
         <Button
             android:id="@+id/btnBook"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"

@@ -1,6 +1,4 @@
-cd D:\HealthBridge\android_app
-.\push-to-github.ps1 -GitHubUsername YOUR-GITHUB-USERNAMEcd D:\HealthBridge\android_app
-.\push-to-github.ps1 -GitHubUsername YOUR-GITHUB-USERNAMEparam(
+param(
     [Parameter(Mandatory=$true)]
     [string]$GitHubUsername,
     [string]$RepoName = "mediconnectug"

@@ -82,64 +82,80 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <!-- Nearby Chip Selected -->
-                <LinearLayout
+                <!-- All Chip -->
+                <TextView
+                    android:id="@+id/chipAll"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
+                    android:text="All"
                     android:background="@drawable/chip_background"
                     android:backgroundTint="#2196F3"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
                     android:gravity="center"
-                    android:paddingHorizontal="12dp"
-                    android:layout_marginEnd="8dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/nearby"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=" ✕"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                    android:paddingHorizontal="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/chipOnline"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:text="Online Now"
+                    android:text="🟢 Online Now"
                     android:background="@drawable/chip_background"
                     android:backgroundTint="#F5F5F5"
                     android:textColor="#666666"
                     android:gravity="center"
                     android:paddingHorizontal="12dp"
                     android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:textSize="12sp" />
 
                 <TextView
+                    android:id="@+id/chipTopRated"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:text="@string/top_rated"
+                    android:text="⭐ Top Rated"
                     android:background="@drawable/chip_background"
                     android:backgroundTint="#F5F5F5"
                     android:textColor="#666666"
                     android:gravity="center"
                     android:paddingHorizontal="12dp"
                     android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:textSize="12sp" />
 
                 <TextView
+                    android:id="@+id/chipAvailable"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:text="@string/available_today"
+                    android:text="📅 Available Today"
                     android:background="@drawable/chip_background"
                     android:backgroundTint="#F5F5F5"
                     android:textColor="#666666"
                     android:gravity="center"
                     android:paddingHorizontal="12dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/chipLowFee"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="💰 Low Fee"
+                    android:background="@drawable/chip_background"
+                    android:backgroundTint="#F5F5F5"
+                    android:textColor="#666666"
+                    android:gravity="center"
+                    android:paddingHorizontal="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:textSize="12sp" />
             </LinearLayout>
         </HorizontalScrollView>
@@ -147,9 +163,18 @@
         <!-- List/Grid Scroll Visual Aid (Grey Bar from image) -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="#DDDDDD"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
             android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/tvResultCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Showing 10 doctors"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:paddingVertical="6dp" />
 
     </LinearLayout>
 
