@@ -121,7 +121,15 @@ class LoginActivity : AppCompatActivity() {
             if (!name.isNullOrBlank()) putString("userName", name)
             if (!token.isNullOrBlank()) {
                 putString("auth_token", token)
-                ApiClient.authToken = token
+                ApiClient.authToken = token   // set in-memory for this session
+            } else {
+                // Fallback / offline login — always restore any previously saved token
+                // so that authenticated API calls (bookings etc.) still work if the
+                // user was previously fully logged in.
+                val existing = prefs.getString("auth_token", null)
+                if (!existing.isNullOrBlank()) {
+                    ApiClient.authToken = existing
+                }
             }
             apply()
         }

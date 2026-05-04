@@ -3,6 +3,7 @@ package com.healthbridge.data.repository
 import com.healthbridge.data.database.*
 import com.healthbridge.network.*
 import com.healthbridge.util.Result
+import retrofit2.HttpException
 
 class DoctorRepository(
     private val apiService: ApiService,
@@ -55,6 +56,7 @@ class DoctorRepository(
         }
     }
 }
+
 
 class AppointmentRepository(
     private val apiService: ApiService,
@@ -123,8 +125,23 @@ class AppointmentRepository(
             } else {
                 return Result.failure(Exception(response.error ?: "Failed to book appointment"))
             }
-        } catch (exception: Exception) {
-            Result.failure(exception)
+        } catch (e: HttpException) {
+            // Read the real error message from the server response body
+            val errorBody = e.response()?.errorBody()?.string()
+            val serverMsg = try {
+                org.json.JSONObject(errorBody ?: "{}").optString("error", null)
+                    ?: org.json.JSONObject(errorBody ?: "{}").optString("message", null)
+            } catch (_: Exception) { null }
+            val message = when (e.code()) {
+                401 -> "401 — ${serverMsg ?: "Session expired. Please log in again."}"
+                403 -> "403 — ${serverMsg ?: "Access denied."}"
+                404 -> "404 — Doctor not found."
+                500 -> "500 — Server error. Try again shortly."
+                else -> "${e.code()} — ${serverMsg ?: e.message()}"
+            }
+            Result.failure(Exception(message))
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

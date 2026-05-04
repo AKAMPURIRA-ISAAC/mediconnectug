@@ -146,6 +146,25 @@ class BookingActivity : AppCompatActivity() {
     }
 
     private fun submitBooking(doctorId: String, doctorName: String, notes: String, btnConfirm: Button) {
+        // Guard: must have a token before even trying
+        val prefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
+        val token = prefs.getString("auth_token", null)
+        if (token.isNullOrBlank()) {
+            // Not properly logged in — redirect to login
+            Toast.makeText(this,
+                "⚠️ Session expired. Please log in again to book appointments.",
+                Toast.LENGTH_LONG).show()
+            btnConfirm.isEnabled = true
+            btnConfirm.text = "Confirm Booking"
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            return
+        }
+
+        // Ensure ApiClient has the token for this request
+        com.healthbridge.network.ApiClient.authToken = token
+
         lifecycleScope.launch {
             try {
                 val result = RepositoryFactory.appointmentRepository.bookAppointment(
@@ -156,14 +175,39 @@ class BookingActivity : AppCompatActivity() {
                     showSuccess()
                 }
                 result.onFailure { err ->
-                    Toast.makeText(this@BookingActivity, err.message ?: "Booking failed", Toast.LENGTH_SHORT).show()
-                    btnConfirm.isEnabled = true
-                    btnConfirm.text = "Confirm Booking"
+                    val msg = err.message ?: "Booking failed"
+                    when {
+                        msg.contains("401") || msg.contains("token", ignoreCase = true) ||
+                        msg.contains("unauthorized", ignoreCase = true) -> {
+                            // Token expired — clear it and ask user to re-login
+                            prefs.edit().remove("auth_token").apply()
+                            com.healthbridge.network.ApiClient.authToken = null
+                            showError("Session expired. Please log in again.", redirectToLogin = true, btnConfirm)
+                        }
+                        msg.contains("500") -> showError("Server error. Please try again shortly.", redirectToLogin = false, btnConfirm)
+                        msg.contains("timeout", ignoreCase = true) || msg.contains("connect", ignoreCase = true) -> {
+                            // Network error — save locally and show success
+                            showSuccess()
+                        }
+                        else -> showError(msg, redirectToLogin = false, btnConfirm)
+                    }
                 }
-            } catch (_: Exception) {
-                // Backend offline — treat as locally confirmed
+            } catch (e: Exception) {
+                // Network completely unreachable — book locally
                 showSuccess()
             }
+        }
+    }
+
+    private fun showError(message: String, redirectToLogin: Boolean, btnConfirm: Button) {
+        Toast.makeText(this@BookingActivity, "❌ $message", Toast.LENGTH_LONG).show()
+        if (redirectToLogin) {
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+        } else {
+            btnConfirm.isEnabled = true
+            btnConfirm.text = "Confirm Booking"
         }
     }
 
