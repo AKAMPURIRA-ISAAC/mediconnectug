@@ -12,6 +12,8 @@ import com.healthbridge.adapters.DoctorItem
 import com.healthbridge.data.database.HealthTipEntity
 import com.healthbridge.data.repository.RepositoryFactory
 import com.healthbridge.util.NetworkUtils
+import com.healthbridge.util.UpdateChecker
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -48,6 +50,14 @@ class HomeActivity : AppCompatActivity() {
         val isFirstLoad = prefs.getBoolean("firstLoad", true)
         NetworkUtils.warnIfFirstLoad(this, isFirstLoad)
         if (isFirstLoad) prefs.edit().putBoolean("firstLoad", false).apply()
+
+        // ── Auto-update check ──────────────────────────────────────────────────
+        // Runs silently in the background; shows a dialog only when a newer
+        // GitHub release is available. Checks at most once per day.
+        lifecycleScope.launch {
+            delay(3000) // wait 3 s so the home screen fully loads first
+            UpdateChecker.checkForUpdate(this@HomeActivity)
+        }
 
         tvAvatar.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
 
