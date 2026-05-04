@@ -1,0 +1,27 @@
+# Android build outputs
+app/build/
+build/
+*.apk
+*.aab
+
+# Keystore files — NEVER commit these
+*.jks
+*.keystore
+app/keystore/
+
+# Local config
+local.properties
+.gradle/
+*.iml
+
+# Environment files
+.env
+backend/.env
+
+# IDE
+.idea/
+*.DS_Store
+
+# Node modules (backend)
+backend/node_modules/
+

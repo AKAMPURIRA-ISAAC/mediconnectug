@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediConnectUG — Download App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a7a5c 0%, #0d9e74 60%, #12c48e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .logo {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #0d9e74, #0a7a5c);
+      border-radius: 20px;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+    }
+    h1 { font-size: 28px; color: #0a7a5c; margin-bottom: 6px; font-weight: 700; }
+    .tagline { color: #666; font-size: 15px; margin-bottom: 32px; }
+    .features {
+      background: #f7fffe;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .feature {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 0; color: #333; font-size: 14px;
+    }
+    .feature span:first-child { font-size: 20px; }
+    .btn-download {
+      display: block;
+      background: linear-gradient(135deg, #0d9e74, #0a7a5c);
+      color: white;
+      text-decoration: none;
+      padding: 18px 32px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(13,158,116,0.35);
+    }
+    .btn-download:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(13,158,116,0.45); }
+    .version-tag {
+      display: inline-block;
+      background: #e8f8f3;
+      color: #0a7a5c;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .install-steps {
+      background: #fffbf0;
+      border: 1px solid #ffe5a0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .install-steps h3 { font-size: 13px; color: #b8860b; margin-bottom: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .install-steps ol { padding-left: 18px; }
+    .install-steps li { font-size: 13px; color: #555; margin-bottom: 6px; line-height: 1.5; }
+    .qr-placeholder {
+      width: 120px; height: 120px;
+      border: 2px dashed #ccc;
+      border-radius: 12px;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      color: #aaa; font-size: 12px; text-align: center;
+      padding: 10px;
+    }
+    .footer { font-size: 12px; color: #aaa; margin-top: 24px; }
+    .footer a { color: #0d9e74; text-decoration: none; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0f0f0; border-radius: 20px;
+      padding: 5px 12px; font-size: 12px; color: #555;
+      margin: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🏥</div>
+    <h1>MediConnectUG</h1>
+    <p class="tagline">Your trusted health companion in Uganda 🇺🇬</p>
+
+    <div class="features">
+      <div class="feature"><span>🩺</span><span>AI symptom analysis & health triage</span></div>
+      <div class="feature"><span>👨‍⚕️</span><span>Connect with 200+ verified doctors</span></div>
+      <div class="feature"><span>📅</span><span>Book appointments instantly</span></div>
+      <div class="feature"><span>🚨</span><span>One-tap emergency calling</span></div>
+      <div class="feature"><span>💊</span><span>Prescription & medication tracking</span></div>
+    </div>
+
+    <div class="version-tag" id="versionTag">v1.0.0 · Latest</div>
+
+    <!-- UPDATE href below with your actual GitHub releases APK download link -->
+    <a class="btn-download"
+       id="downloadBtn"
+       href="https://github.com/YOUR-USERNAME/mediconnectug/releases/latest/download/MediConnectUG-v1.0.0.apk"
+       download>
+      📥 Download APK (Free)
+    </a>
+
+    <div class="install-steps">
+      <h3>⚡ How to Install (30 seconds)</h3>
+      <ol>
+        <li>Tap <strong>Download APK</strong> above</li>
+        <li>Open your phone <strong>Settings → Security</strong></li>
+        <li>Enable <strong>"Install from unknown sources"</strong> or <strong>"Allow this source"</strong></li>
+        <li>Open the downloaded file and tap <strong>Install</strong></li>
+        <li>Open <strong>MediConnectUG</strong> and create your account</li>
+      </ol>
+    </div>
+
+    <div>
+      <span class="badge">📱 Android 7.0+</span>
+      <span class="badge">🆓 100% Free</span>
+      <span class="badge">🔒 Safe & Verified</span>
+      <span class="badge">🇺🇬 Built for Uganda</span>
+    </div>
+
+    <div class="footer">
+      <p>By downloading you agree to our <a href="#">Privacy Policy</a></p>
+      <p style="margin-top:6px">© 2026 MediConnectUG · Made with 💚 in Uganda</p>
+    </div>
+  </div>
+
+  <script>
+    // Auto-fetch latest release info from GitHub API
+    const GITHUB_REPO = 'YOUR-USERNAME/mediconnectug'; // ← change this
+    fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`)
+      .then(r => r.json())
+      .then(release => {
+        if (release.tag_name) {
+          document.getElementById('versionTag').textContent = `${release.tag_name} · Latest`;
+        }
+        const apkAsset = release.assets?.find(a => a.name.endsWith('.apk'));
+        if (apkAsset) {
+          document.getElementById('downloadBtn').href = apkAsset.browser_download_url;
+        }
+      })
+      .catch(() => {}); // silently fail — static link still works
+  </script>
+</body>
+</html>
+

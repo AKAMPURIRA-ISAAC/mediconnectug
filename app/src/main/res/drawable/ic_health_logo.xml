@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="150dp"
+    android:viewportWidth="200"
+    android:viewportHeight="150">
+
+    <!-- Dome/Bridge Top (Teal Gradient style) -->
+    <path
+        android:fillColor="#2BB5C1"
+        android:pathData="M35,85 C35,35 165,35 165,85 L165,100 C130,85 70,85 35,100 Z" />
+
+    <!-- Bridge Vertical Bars -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M62,60 h4 v30 h-4 z M78,52 h4 v38 h-4 z M118,52 h4 v38 h-4 z M134,60 h4 v30 h-4 z" />
+
+    <!-- Medical Cross -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M92,48 h16 v10 h12 v16 h-12 v10 h-16 v-10 h-12 v-16 h12 z" />
+
+    <!-- Dark Blue Hill (Left) -->
+    <path
+        android:fillColor="#005A8C"
+        android:pathData="M15,110 C45,95 100,125 180,110 L180,130 C100,145 50,115 15,130 Z" />
+
+    <!-- Green Hill (Right) -->
+    <path
+        android:fillColor="#4BAE4F"
+        android:pathData="M100,110 C130,95 170,95 190,115 L190,135 C170,115 130,115 100,130 Z" />
+
+    <!-- Heart -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,120 c-2,-2 -5,-2 -7,0 c-2,2 -2,5 0,7 l7,7 l7,-7 c2,-2 2,-5 0,-7 c-2,-2 -5,-2 -7,0 z" />
+
+</vector>

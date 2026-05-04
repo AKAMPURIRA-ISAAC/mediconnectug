@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HealthBridge" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorPrimaryVariant">#0D47A1</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#00ACC1</item>
+        <item name="colorSecondaryVariant">#006064</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">#0D47A1</item>
+        <item name="android:windowBackground">#F0F4F8</item>
+    </style>
+
+    <style name="Theme.HealthBridge.Splash" parent="Theme.HealthBridge">
+        <item name="android:windowBackground">@drawable/splash_gradient</item>
+        <item name="android:statusBarColor">#1565C0</item>
+    </style>
+
+    <!-- Floating Action Button style -->
+    <style name="FABStyle" parent="Widget.MaterialComponents.FloatingActionButton">
+        <item name="backgroundTint">#1565C0</item>
+        <item name="tint">#FFFFFF</item>
+    </style>
+</resources>

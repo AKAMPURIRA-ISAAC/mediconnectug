@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration for MediConnectUG
+  ─────────────────────────────────────────────────
+  PRODUCTION : All traffic goes over HTTPS to Render + Supabase — fully encrypted.
+  DEVELOPMENT: Allows plain HTTP to 10.0.2.2 (Android emulator localhost).
+               This domain is only reachable inside the emulator, never on the internet.
+-->
+<network-security-config>
+
+    <!-- Production servers — HTTPS only, system CAs trusted (Render + Supabase use Let's Encrypt) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">onrender.com</domain>
+        <domain includeSubdomains="true">supabase.co</domain>
+        <domain includeSubdomains="true">supabase.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Local emulator only — HTTP allowed to 10.0.2.2 during development -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">192.168.0.0</domain>
+    </domain-config>
+
+    <!-- Base config: all other domains use HTTPS + system certificate authorities -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+</network-security-config>
+

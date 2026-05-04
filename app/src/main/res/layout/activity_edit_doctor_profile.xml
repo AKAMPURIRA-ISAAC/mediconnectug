@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- Top Bar -->
+    <RelativeLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#003399"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_back"
+            app:tint="#FFFFFF"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Edit Doctor Profile"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:text="Save"
+            android:textColor="#BBDEFB"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topBar"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center_horizontal">
+
+            <!-- Doctor Avatar -->
+            <RelativeLayout
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="28dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:cardCornerRadius="55dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#E3F2FD">
+                    <ImageView
+                        android:id="@+id/ivDoctorAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_doctor_avatar"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="Doctor Avatar" />
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnChangePhoto"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true"
+                    app:cardCornerRadius="18dp"
+                    app:cardBackgroundColor="#003399"
+                    app:cardElevation="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_menu_camera"
+                        app:tint="#FFFFFF" />
+                </androidx.cardview.widget.CardView>
+            </RelativeLayout>
+
+            <!-- Full Name -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Full Name"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etDoctorName"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="textPersonName"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="e.g. Dr. John Doe"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Specialty -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Specialty"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etSpecialty"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="text"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="e.g. Cardiologist"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Years of Experience -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Years of Experience"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etExperience"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="number"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="e.g. 10"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Phone -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Phone Number"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etPhone"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="phone"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="+256 700 000 000"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Hospital / Clinic -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hospital / Clinic"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etHospital"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="text"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="e.g. Mulago National Hospital"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Consultation Fee -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Consultation Fee (UGX)"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etFee"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:paddingHorizontal="16dp"
+                android:inputType="number"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="e.g. 50000"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Bio -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Professional Bio"
+                android:textColor="#546E7A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+            <EditText
+                android:id="@+id/etBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="100dp"
+                android:background="@drawable/search_background"
+                android:backgroundTint="#EEEEEE"
+                android:padding="16dp"
+                android:inputType="textMultiLine"
+                android:gravity="top"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:textColorHint="#9E9E9E"
+                android:hint="Describe your experience and expertise…"
+                android:layout_marginBottom="40dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>
+

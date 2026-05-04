@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F4F8">
+
+    <!-- ── Header ── -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="12dp"
+        android:elevation="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="My Appointments"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/ivNotifications"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_notification_badge"
+            android:contentDescription="Notifications" />
+    </LinearLayout>
+
+    <!-- ── Tab Bar ── -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/topBar"
+        android:background="#1565C0"
+        app:tabIndicatorColor="#FFFFFF"
+        app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="#FFFFFF"
+        app:tabTextColor="#BBDEFB"
+        app:tabMode="fixed"
+        app:tabGravity="fill">
+
+        <com.google.android.material.tabs.TabItem android:text="Upcoming" />
+        <com.google.android.material.tabs.TabItem android:text="Past" />
+        <com.google.android.material.tabs.TabItem android:text="Cancelled" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- ── Content ── -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerAppointments"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tabLayout"
+        android:layout_above="@+id/bottomNavigation"
+        android:paddingTop="8dp"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false" />
+
+    <!-- ── Empty State ── -->
+    <LinearLayout
+        android:id="@+id/emptyState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tabLayout"
+        android:layout_above="@id/bottomNavigation"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📅"
+            android:textSize="64sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No appointments found"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#37474F"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Book a consultation with a top-rated doctor"
+            android:textSize="14sp"
+            android:textColor="#90A4AE"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btnBookNow"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Find a Doctor"
+            android:textAllCaps="false"
+            android:backgroundTint="#1565C0"
+            android:paddingHorizontal="24dp"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+
+    <!-- ── FAB ── -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabBook"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomNavigation"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
+        app:backgroundTint="#1565C0"
+        app:tint="#FFFFFF"
+        android:src="@android:drawable/ic_input_add"
+        android:contentDescription="Book new appointment" />
+
+    <!-- ── Bottom Navigation ── -->
+    <LinearLayout
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:layout_alignParentBottom="true"
+        android:background="#FFFFFF"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:elevation="8dp"
+        android:baselineAligned="false">
+
+        <TextView android:id="@+id/navHome" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/home" android:gravity="center" android:textSize="11sp" android:textColor="#888888" app:drawableTopCompat="@drawable/ic_home" app:drawableTint="#888888" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/navSearch" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/search" android:gravity="center" android:textSize="11sp" android:textColor="#888888" app:drawableTopCompat="@drawable/ic_search" app:drawableTint="#888888" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/navSchedule" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/schedule" android:gravity="center" android:textSize="11sp" android:textColor="#1565C0" android:textStyle="bold" app:drawableTopCompat="@drawable/ic_schedule" app:drawableTint="#1565C0" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/navChat" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/chat" android:gravity="center" android:textSize="11sp" android:textColor="#888888" app:drawableTopCompat="@drawable/ic_chat" app:drawableTint="#888888" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/navProfile" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/profile" android:gravity="center" android:textSize="11sp" android:textColor="#888888" app:drawableTopCompat="@drawable/ic_profile" app:drawableTint="#888888" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+</RelativeLayout>

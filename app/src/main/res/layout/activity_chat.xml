@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F7FA">
+
+    <!-- ── Chat Header ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="#1565C0"
+        android:elevation="4dp">
+
+        <!-- Back Arrow -->
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back"
+            app:tint="#FFFFFF"
+            android:contentDescription="Back"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- AI Avatar -->
+        <TextView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="🤖"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:background="@drawable/avatar_circle"
+            android:backgroundTint="#0D47A1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="10dp" />
+
+        <!-- Name + Status -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvDoctorName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MediConnectUG AI"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:layout_width="7dp"
+                    android:layout_height="7dp"
+                    android:background="@drawable/avatar_circle"
+                    android:backgroundTint="#69F0AE"
+                    android:layout_marginEnd="5dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Online • AI Powered"
+                    android:textColor="#B3E5FC"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Stethoscope icon on the right -->
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_stethoscope"
+            app:tint="#B3E5FC"
+            android:contentDescription="Medical"
+            android:layout_marginEnd="4dp" />
+    </LinearLayout>
+
+    <!-- ── Messages RecyclerView ── -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:background="#F5F7FA"
+        android:clipToPadding="false" />
+
+    <!-- ── Quick Reply Chips ── -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:background="#FFFFFF"
+        android:paddingVertical="8dp"
+        android:paddingHorizontal="8dp">
+
+        <LinearLayout
+            android:id="@+id/llQuickReplies"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/chipSymptomCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🩺 Symptom Check"
+                android:textSize="12sp"
+                android:textColor="#1565C0"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/chip_background"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipHealthTip"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="💡 Health Tip"
+                android:textSize="12sp"
+                android:textColor="#00796B"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/chip_background"
+                android:backgroundTint="#E0F2F1"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipBookDoctor"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="📅 Book Doctor"
+                android:textSize="12sp"
+                android:textColor="#6A1B9A"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/chip_background"
+                android:backgroundTint="#F3E5F5"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipEmergency"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🚨 Emergency"
+                android:textSize="12sp"
+                android:textColor="#C62828"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/chip_background"
+                android:backgroundTint="#FFEBEE"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipMedication"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="💊 Medications"
+                android:textSize="12sp"
+                android:textColor="#E65100"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/chip_background"
+                android:backgroundTint="#FFF3E0"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- ── Input Bar ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:elevation="4dp">
+
+        <EditText
+            android:id="@+id/etMessage"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="Ask about your health..."
+            android:padding="12dp"
+            android:textSize="15sp"
+            android:background="@drawable/chat_input_background"
+            android:inputType="textMultiLine"
+            android:maxLines="3"
+            android:imeOptions="actionSend" />
+
+        <ImageView
+            android:id="@+id/btnSend"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_chat"
+            android:background="@drawable/avatar_circle"
+            android:backgroundTint="#1565C0"
+            app:tint="#FFFFFF"
+            android:padding="12dp"
+            android:layout_marginStart="8dp"
+            android:contentDescription="Send"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+</LinearLayout>

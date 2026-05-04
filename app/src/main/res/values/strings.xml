@@ -1,0 +1,160 @@
+﻿<resources>
+    <string name="app_name">MediConnectUG</string>
+    <string name="healthbridge_logo">MediConnectUG Logo</string>
+    <string name="search_hint">Search doctors, clinics, medicines...</string>
+    <string name="search_icon">Search Icon</string>
+    <string name="hello_sarah">Hello, Sarah!</string>
+    <string name="date_placeholder">Monday, 15 Jan 2025</string>
+    <string name="find_doctor">Find Doctor</string>
+    <string name="book_appointment_nav">Book Appointment</string>
+    <string name="pharmacy">Pharmacy</string>
+    <string name="emergency">Emergency</string>
+    <string name="recommended_for_you">Recommended for You</string>
+    <string name="your_upcoming_appointments">Your Upcoming Appointments</string>
+    <string name="view_all">View All ></string>
+    <string name="confirmed">Confirmed</string>
+    <string name="pending">Pending</string>
+    <string name="book_now">Book Now</string>
+    <string name="video">Video</string>
+    <string name="in_person">In-person</string>
+
+    <!-- Doctor Profile Strings -->
+    <string name="dr_sarah_johnson">Dr. Sarah Johnson</string>
+    <string name="specialty_cardiologist_exp">Cardiologist  •  10+ yrs exp</string>
+    <string name="rating_reviews">4.8 (124 reviews)</string>
+    <string name="call">CALL</string>
+    <string name="message">MESSAGE</string>
+    <string name="direction">DIRECTION</string>
+    <string name="about">About</string>
+    <string name="availability">Availability</string>
+    <string name="reviews">Reviews</string>
+    <string name="biography">Biography</string>
+    <string name="dr_sarah_bio">Dr. Sarah Johnson is a board-certified cardiologist specializing in preventive cardiology and heart failure management. With over a decade of clinical experience at premier medical centers, she combines cutting-edge diagnostic technology with a patient-centric, empathetic approach to cardiovascular wellness.</string>
+    <string name="specialties">Specialties</string>
+    <string name="prev_cardiology">Preventive Cardiology</string>
+    <string name="echocardiography">Echocardiography</string>
+    <string name="heart_failure">Heart Failure</string>
+    <string name="lipidology">Lipidology</string>
+    <string name="education">Education</string>
+    <string name="harvard">Harvard Medical School</string>
+    <string name="harvard_desc">Doctor of Medicine (MD)</string>
+    <string name="mayo">Mayo Clinic</string>
+    <string name="mayo_desc">Cardiovascular Fellowship</string>
+    <string name="next_step_title">Ready for your next step?</string>
+    <string name="next_step_desc">Dr. Johnson has helped 2,400+ patients improve their heart health this year.</string>
+    <string name="book_appointment">Book Appointment</string>
+
+    <!-- Emergency Strings -->
+    <string name="sos">SOS</string>
+    <string name="press_for_help">Press for help</string>
+    <string name="emergency_services">Emergency Services</string>
+    <string name="ambulance">Ambulance</string>
+    <string name="ambulance_num">999</string>
+    <string name="police">Police</string>
+    <string name="police_num">112</string>
+    <string name="fire">Fire</string>
+    <string name="fire_num">911</string>
+    <string name="hospital_emergency">Hospital</string>
+    <string name="view_near">View Near</string>
+    <string name="my_medical_info">My Medical Info</string>
+    <string name="blood_type_label">Blood Type</string>
+    <string name="blood_type_value">A+</string>
+    <string name="allergies_label">Allergies</string>
+    <string name="allergies_value">Penicillin</string>
+    <string name="immediate_help_title">Immediate Assistance Required?</string>
+
+    <!-- Prescriptions -->
+    <string name="my_prescriptions">My Prescriptions</string>
+    <string name="no_prescriptions">No active prescriptions found</string>
+    <string name="prescriptions_desc">Manage your medications and refills in one place.</string>
+
+    <!-- Previous strings kept for compatibility -->
+    <string name="hello_user">Hello, User!</string>
+    <string name="current_date">Monday, April 20, 2026</string>
+    <string name="find_doctor_label">Find Doctor</string>
+    <string name="book">Book</string>
+    <string name="hospital">Hospital</string>
+    <string name="upcoming_events">Upcoming events</string>
+    <string name="view_appointment_details">View Appointment details</string>
+    <string name="general_checkup">General Checkup</string>
+    <string name="healthcare_clinic">HealthCare Clinic</string>
+    <string name="appointment_date">April 28, 2026</string>
+    <string name="appointment_time">09:30 AM</string>
+    <string name="profile">Profile</string>
+    <string name="search">Search</string>
+    <string name="home">Home</string>
+    <string name="schedule">Schedule</string>
+    <string name="chat">Chat</string>
+
+    <!-- Login -->
+    <string name="welcome_back">Welcome Back!</string>
+    <string name="sign_in_to_continue">sign in to continue</string>
+    <string name="email_username_hint">Email / Username:</string>
+    <string name="password_hint">Password:</string>
+    <string name="forgot_password">forgot password?</string>
+    <string name="login">login</string>
+    <string name="continue_with_google">continue with google</string>
+    <string name="dont_have_account_register">Don\'t have account? Register Now</string>
+    <string name="user_icon">User Icon</string>
+    <string name="password_icon">Password Icon</string>
+    <string name="google_logo">Google Logo</string>
+
+    <!-- Find Doctors -->
+    <string name="find_doctors">Find Doctors</string>
+    <string name="search_by_name_or_specialty">Search by name or specialty...</string>
+    <string name="nearby">Nearby</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="available_today">Available Today</string>
+    <string name="price_low">Price Low</string>
+    <string name="view_all_on_map">View All on Map</string>
+    <string name="doctors_vicinity">12+ doctors in your direct vicinity</string>
+    <string name="open_maps">Open Maps →</string>
+    <string name="premium_care">PREMIUM CARE</string>
+    <string name="telehealth_consultations">Telehealth Consultations</string>
+    <string name="telehealth_description">Skip the travel. Speak with leading specialists from the comfort of your sanctuary.</string>
+    <string name="explore_telehealth">Explore Telehealth</string>
+    <string name="back">Back</string>
+    <string name="profile_image">Profile Image</string>
+
+    <!-- Profile -->
+    <string name="notifications">Notifications</string>
+    <string name="user_name_sarah">Sarah Johnson</string>
+    <string name="premium_member_id">Premium Member • ID: HB-29402</string>
+    <string name="blood_type_a_plus">A+ BLOOD TYPE</string>
+    <string name="active">ACTIVE</string>
+    <string name="account_settings">ACCOUNT SETTINGS</string>
+    <string name="medical_records">Medical Records</string>
+    <string name="medical_records_desc">Lab results, prescriptions &amp; history</string>
+    <string name="family_members">Family Members</string>
+    <string name="family_members_desc">Manage 3 linked accounts</string>
+    <string name="preferences">PREFERENCES</string>
+    <string name="logout">Logout</string>
+    <string name="version_privacy">VERSION 4.2.0-STABLE • PRIVACY POLICY</string>
+    <string name="profile_picture">Profile Picture</string>
+
+    <!-- Appointments -->
+    <string name="my_appointments">My Appointments</string>
+    <string name="manage_visits_desc">Manage your upcoming visits and keep track of your clinical history with MediConnectUG specialists.</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="past">Past</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="dr_marcus_thorne">Dr. Marcus Thorne</string>
+    <string name="dr_elena_rodriguez">Dr. Elena Rodriguez</string>
+    <string name="marcus_appointment_time">Tuesday, Oct 24 • 09:30 AM</string>
+    <string name="elena_appointment_time">Friday, Oct 27 • 02:15 PM</string>
+    <string name="join_call">Join Call</string>
+    <string name="reschedule">Reschedule</string>
+    <string name="book_new_consultation">Book a new Consultation?</string>
+    <string name="connect_specialists_desc">Connect with over 200+ top-rated specialists within 24 hours.</string>
+    <string name="find_a_specialist">Find a Specialist</string>
+
+    <!-- Doctor Item -->
+    <string name="doctor_image">Doctor Image</string>
+    <string name="doctor_sarah_name">Dr. Sarah Johnson</string>
+    <string name="specialty_cardiologist">Cardiologist</string>
+    <string name="distance_placeholder">📍 %1$s away</string>
+    <string name="rating_placeholder">★ %1$s</string>
+    <string name="view_profile">View Profile</string>
+    <string name="book_appointment_btn">Book Appointment</string>
+
+</resources>
