@@ -294,7 +294,7 @@ object ApiClient {
      *
      * ─────────────────────────────────────────────────────────────────────
      */
-    private const val BASE_URL = "https://mediconnectug-api.onrender.com/" // ← PRODUCTION
+    private const val BASE_URL = "https://mediconnectug.onrender.com/" // ← PRODUCTION (Render)
     // private const val BASE_URL = "http://10.0.2.2:3001/"               // ← Local emulator
 
     /** Set this after login; the interceptor reads it on every request. */

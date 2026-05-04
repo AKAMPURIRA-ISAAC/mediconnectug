@@ -312,7 +312,7 @@ For production at scale, upgrade to Render Starter ($7/month) for always-on.
 
 | Service | URL |
 |---------|-----|
-| API (Render) | `https://mediconnectug-api.onrender.com` |
+| API (Render) | `https://mediconnectug.onrender.com` |
 | Database (Supabase) | `https://app.supabase.com/project/YOUR-REF` |
 | Google Play Console | `https://play.google.com/console` |
 | Firebase Console | `https://console.firebase.google.com` |
