@@ -12,6 +12,7 @@ import com.healthbridge.adapters.DoctorItem
 import com.healthbridge.data.database.HealthTipEntity
 import com.healthbridge.data.repository.RepositoryFactory
 import com.healthbridge.util.NetworkUtils
+import com.healthbridge.util.PermissionManager
 import com.healthbridge.util.UpdateChecker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,6 +46,15 @@ class HomeActivity : AppCompatActivity() {
             .take(2)
             .joinToString("") { it.first().uppercase() }
         tvAvatar.text = initials.ifEmpty { "U" }
+
+        // ── Request permissions on first launch ───────────────────────────────
+        // Ask for phone, location, notifications in one go so users grant them
+        // before they need them (better UX than surprising them mid-flow).
+        val permPrefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
+        if (permPrefs.getBoolean("permissions_requested", false).not()) {
+            permPrefs.edit().putBoolean("permissions_requested", true).apply()
+            PermissionManager.requestOnboardingPermissions(this)
+        }
 
         // Show server warm-up notice on first use (Render free tier cold start)
         val isFirstLoad = prefs.getBoolean("firstLoad", true)
@@ -472,4 +482,16 @@ class HomeActivity : AppCompatActivity() {
 
 
     private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionManager.handleResult(requestCode, permissions, grantResults,
+            onGranted = { /* permissions granted — nothing extra to do here */ },
+            onDenied = { /* user denied — they'll be prompted again just-in-time when feature is used */ }
+        )
+    }
 }

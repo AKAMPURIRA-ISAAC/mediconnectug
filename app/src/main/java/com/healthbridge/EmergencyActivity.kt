@@ -1,6 +1,7 @@
 ﻿package com.healthbridge
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
@@ -10,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import com.healthbridge.util.PermissionManager
 
 class EmergencyActivity : AppCompatActivity() {
 
@@ -49,32 +51,67 @@ class EmergencyActivity : AppCompatActivity() {
         }
 
         btnAmbulance.setOnClickListener {
-            // Uganda National Ambulance Service
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:0800100066")))
+            PermissionManager.withCallPermission(this) {
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:0800100066")))
+            }
         }
 
         btnPolice.setOnClickListener {
-            // Uganda Police Force Emergency
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:999")))
+            PermissionManager.withCallPermission(this) {
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:999")))
+            }
         }
 
         btnFire.setOnClickListener {
-            // Uganda Fire Brigade
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:0800199700")))
+            PermissionManager.withCallPermission(this) {
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:0800199700")))
+            }
         }
 
         btnNearbyHospitals.setOnClickListener {
-            val mapsUri = Uri.parse("geo:0.3163,32.5822?q=hospital+Kampala+Uganda")
-            val mapsIntent = Intent(Intent.ACTION_VIEW, mapsUri)
-            mapsIntent.setPackage("com.google.android.apps.maps")
-            if (mapsIntent.resolveActivity(packageManager) != null) {
-                startActivity(mapsIntent)
-            } else {
-                startActivity(Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://maps.google.com/?q=hospital+Kampala+Uganda")
-                ))
+            PermissionManager.withLocationPermission(this) {
+                openNearbyHospitals()
             }
         }
+    }
+
+    private fun openNearbyHospitals() {
+        val mapsUri = Uri.parse("geo:0.3163,32.5822?q=hospital+Kampala+Uganda")
+        val mapsIntent = Intent(Intent.ACTION_VIEW, mapsUri)
+        mapsIntent.setPackage("com.google.android.apps.maps")
+        if (mapsIntent.resolveActivity(packageManager) != null) {
+            startActivity(mapsIntent)
+        } else {
+            startActivity(Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://maps.google.com/?q=hospital+Kampala+Uganda")
+            ))
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionManager.handleResult(requestCode, permissions, grantResults,
+            onGranted = { code ->
+                when (code) {
+                    PermissionManager.RC_CALL_PHONE ->
+                        Toast.makeText(this, "Phone permission granted. Tap the number to call.", Toast.LENGTH_SHORT).show()
+                    PermissionManager.RC_LOCATION ->
+                        openNearbyHospitals()
+                }
+            },
+            onDenied = { code ->
+                when (code) {
+                    PermissionManager.RC_CALL_PHONE ->
+                        PermissionManager.showSettingsDialog(this, "Phone Permission Denied",
+                            "Enable Phone permission to directly call emergency services.")
+                    PermissionManager.RC_LOCATION ->
+                        Toast.makeText(this, "Location denied — opening map without your location.", Toast.LENGTH_SHORT).show()
+                            .also { openNearbyHospitals() }
+                }
+            }
+        )
     }
 }

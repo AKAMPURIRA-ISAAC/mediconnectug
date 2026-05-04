@@ -1,6 +1,7 @@
 ﻿package com.healthbridge
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -10,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.tabs.TabLayout
+import com.healthbridge.util.PermissionManager
 
 class DoctorProfileActivity : AppCompatActivity() {
 
@@ -69,9 +71,10 @@ class DoctorProfileActivity : AppCompatActivity() {
 
         // Action buttons: Call, Message, Direction
         findViewById<View>(R.id.btnCall).setOnClickListener {
-            // Uganda doctors — use doctor's phone or Uganda medical helpline
             val dialPhone = phone.ifEmpty { "0800100066" }
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dialPhone")))
+            PermissionManager.withCallPermission(this) {
+                startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$dialPhone")))
+            }
         }
 
         findViewById<View>(R.id.btnMessage).setOnClickListener {
@@ -113,5 +116,18 @@ class DoctorProfileActivity : AppCompatActivity() {
             }
             startActivity(bookIntent)
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionManager.handleResult(requestCode, permissions, grantResults,
+            onDenied = {
+                if (it == PermissionManager.RC_CALL_PHONE)
+                    PermissionManager.showSettingsDialog(this, "Phone Permission Denied",
+                        "Enable Phone permission to call this doctor directly.")
+            }
+        )
     }
 }
