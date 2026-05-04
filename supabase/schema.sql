@@ -86,6 +86,27 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   ai_context       TEXT,
   created_at       TIMESTAMPTZ DEFAULT NOW()
 );
+-- DOCTOR-PATIENT CHAT SESSIONS
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id                SERIAL PRIMARY KEY,
+  patient_id        INT REFERENCES users(id) ON DELETE CASCADE,
+  doctor_id         INT REFERENCES doctors(id) ON DELETE SET NULL,
+  chief_complaint   TEXT NOT NULL,
+  urgency           VARCHAR(20) DEFAULT 'MODERATE',  -- 'URGENT', 'MODERATE', 'MILD'
+  status            VARCHAR(20) DEFAULT 'waiting',   -- 'waiting', 'active', 'completed'
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  last_message_at   TIMESTAMPTZ
+);
+-- DIRECT MESSAGES (Doctor-Patient)
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id            SERIAL PRIMARY KEY,
+  session_id    INT REFERENCES chat_sessions(id) ON DELETE CASCADE,
+  sender_id     INT REFERENCES users(id) ON DELETE CASCADE,
+  sender_type   VARCHAR(20) NOT NULL,  -- 'patient' or 'doctor'
+  message       TEXT NOT NULL,
+  is_read       BOOLEAN DEFAULT FALSE,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
 -- HEALTH TIPS
 CREATE TABLE IF NOT EXISTS health_tips (
   id         SERIAL PRIMARY KEY,

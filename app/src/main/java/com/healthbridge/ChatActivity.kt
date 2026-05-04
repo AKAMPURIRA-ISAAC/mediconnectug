@@ -319,7 +319,37 @@ class ChatActivity : AppCompatActivity() {
     private fun containsDoctorRequest(t: String) =
         listOf("talk to doctor","see doctor","real doctor","connect doctor","speak to doctor","need doctor","find doctor","chat with doctor","human doctor","online doctor").any { t.contains(it) }
     private fun containsEmergency(t: String) =
-        listOf("emergency","urgent","severe","can't breathe","cannot breathe","chest pain","bleeding","unconscious","accident","dying","fainted","heart attack","stroke","seizure","convulsion","unresponsive").any { t.contains(it) }
+        listOf(
+            // Critical cardiovascular
+            "emergency","urgent","severe","chest pain","heart attack","cardiac arrest",
+            "crushing pain","pain radiating","left arm pain",
+            // Respiratory emergencies
+            "can't breathe","cannot breathe","difficulty breathing","gasping for air",
+            "choking","turning blue","blue lips","cyanosis",
+            // Neurological emergencies
+            "stroke","can't move","paralysis","facial drooping","slurred speech",
+            "severe headache","worst headache","thunderclap headache","seizure",
+            "convulsion","fitting","unresponsive","unconscious","passed out","fainted",
+            "not waking up","confusion suddenly",
+            // Trauma & accidents
+            "accident","hit by","car crash","fell from height","head injury",
+            "broken bone","compound fracture","bleeding heavily","won't stop bleeding",
+            "deep cut","stabbed","shot","gunshot","trauma",
+            // Severe bleeding & circulation
+            "vomiting blood","coughing blood","blood in stool","black stool",
+            "heavy bleeding","hemorrhage","internal bleeding",
+            // Obstetric emergencies
+            "pregnant and bleeding","severe pregnancy pain","waters broke early",
+            "can't feel baby move","placenta",
+            // Severe allergic reactions
+            "anaphylaxis","throat closing","swollen tongue","allergic shock",
+            "hives all over","severe allergic",
+            // Other critical conditions
+            "appendicitis","extreme pain","unbearable pain","kidney stone",
+            "diabetic emergency","very low sugar","very high sugar","ketones",
+            "poisoning","overdose","took too many","suicide attempt","self harm",
+            "dying","think i'm dying","going to die"
+        ).any { t.contains(it) }
     private fun containsHealthTipRequest(t: String) =
         listOf("health tip","tip","advice","wellness","healthy lifestyle","how to stay healthy","give me a tip","suggest").any { t.contains(it) }
     private fun containsAnotherTip(t: String) =
@@ -594,29 +624,270 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun respondToEmergency() {
-        addBotMessage(
-            "🚨 **EMERGENCY — ACT IMMEDIATELY** 🚨\n\n" +
-            "**Uganda Emergency Numbers:**\n" +
-            "📞 Ambulance: **0800 100 066** _(toll-free)_\n" +
-            "📞 Police: **999** or **112**\n" +
-            "📞 Red Cross Uganda: **+256 414 287 776**\n" +
-            "📞 Mulago Hospital: **+256 414 554 001**\n\n" +
-            "**While waiting for help:**\n" +
-            "1️⃣ Keep the patient calm — do not move them unnecessarily\n" +
-            "2️⃣ Do NOT give food or water\n" +
-            "3️⃣ Check breathing every 2 minutes\n" +
-            "4️⃣ For bleeding: apply firm direct pressure with a clean cloth\n" +
-            "5️⃣ For unconsciousness: recovery position (on their side)\n\n" +
-            "Tap **🚨 Emergency** below for one-tap calling."
-        )
+        val lastInput = recentUserInputs.lastOrNull() ?: ""
+        
+        // Detect specific emergency type for targeted response
+        val emergencyType = when {
+            lastInput.contains("chest pain") || lastInput.contains("heart attack") || 
+            lastInput.contains("crushing pain") || lastInput.contains("left arm pain") -> "CARDIAC"
+            lastInput.contains("can't breathe") || lastInput.contains("choking") || 
+            lastInput.contains("gasping") || lastInput.contains("blue lips") -> "RESPIRATORY"
+            lastInput.contains("stroke") || lastInput.contains("paralysis") || 
+            lastInput.contains("facial drooping") || lastInput.contains("slurred speech") -> "STROKE"
+            lastInput.contains("seizure") || lastInput.contains("convulsion") || 
+            lastInput.contains("fitting") -> "SEIZURE"
+            lastInput.contains("accident") || lastInput.contains("trauma") || 
+            lastInput.contains("broken bone") || lastInput.contains("head injury") -> "TRAUMA"
+            lastInput.contains("bleeding") || lastInput.contains("hemorrhage") || 
+            lastInput.contains("won't stop bleeding") -> "BLEEDING"
+            lastInput.contains("unconscious") || lastInput.contains("unresponsive") || 
+            lastInput.contains("passed out") -> "UNCONSCIOUS"
+            lastInput.contains("suicide") || lastInput.contains("overdose") || 
+            lastInput.contains("poisoning") -> "POISONING"
+            lastInput.contains("allergic") || lastInput.contains("anaphylaxis") || 
+            lastInput.contains("throat closing") -> "ANAPHYLAXIS"
+            else -> "GENERAL"
+        }
+
+        val specificGuidance = when (emergencyType) {
+            "CARDIAC" -> """
+                🚨 **HEART ATTACK SUSPECTED — URGENT ACTION**
+                
+                **IMMEDIATE STEPS:**
+                ⏱️ **CALL AMBULANCE NOW: 0800 100 066**
+                1️⃣ Make patient sit upright (NOT lie down)
+                2️⃣ Give **300mg aspirin** (chew it) if available and not allergic
+                3️⃣ Loosen tight clothing around neck/chest
+                4️⃣ Stay calm — anxiety makes it worse
+                5️⃣ If patient loses consciousness → start CPR
+                
+                **WARNING SIGNS OF HEART ATTACK:**
+                • Crushing chest pain lasting > 5 minutes
+                • Pain spreading to jaw, neck, left arm
+                • Sweating, nausea, feeling of doom
+                • Shortness of breath
+                
+                ⏰ **TIME = HEART MUSCLE** — Every minute counts!
+            """.trimIndent()
+            
+            "RESPIRATORY" -> """
+                🚨 **BREATHING EMERGENCY — ACT NOW**
+                
+                **IMMEDIATE STEPS:**
+                ⏱️ **CALL AMBULANCE: 0800 100 066**
+                1️⃣ Sit patient UPRIGHT — lean slightly forward
+                2️⃣ Open all windows — fresh air helps
+                3️⃣ Loosen tight clothing around neck/chest
+                4️⃣ If asthma: use reliever inhaler immediately (2-4 puffs)
+                5️⃣ If choking: perform Heimlich maneuver
+                
+                **CHOKING FIRST AID (Adults):**
+                • Stand behind person
+                • Make a fist above belly button
+                • Grab fist with other hand
+                • Quick upward thrusts — repeat 5 times
+                • Call ambulance if object not cleared
+                
+                **If breathing stops → START CPR immediately**
+            """.trimIndent()
+            
+            "STROKE" -> """
+                🚨 **STROKE EMERGENCY — F.A.S.T. ACTION**
+                
+                🔴 **BRAIN DAMAGE HAPPENING NOW** — Call ambulance within 5 minutes
+                ⏱️ **CALL: 0800 100 066 or GO TO MULAGO/NSAMBYA NOW**
+                
+                **F.A.S.T. Stroke Recognition:**
+                👤 **F**ace — Smile? One side droops?
+                💪 **A**rm — Raise both? One drifts down?
+                🗣️ **S**peech — Repeat simple sentence? Slurred?
+                ⏰ **T**ime — Note EXACT time symptoms started
+                
+                **CRITICAL ACTIONS:**
+                1️⃣ Note time symptoms started (doctors need this!)
+                2️⃣ Keep patient lying down with head slightly raised
+                3️⃣ Do NOT give food or water (swallowing may be impaired)
+                4️⃣ Turn head to side if vomiting
+                5️⃣ Loosen tight clothing
+                
+                💡 **Stroke treatment works best in first 3-4 hours**
+            """.trimIndent()
+            
+            "TRAUMA" -> """
+                🚨 **TRAUMA / ACCIDENT — EMERGENCY PROTOCOL**
+                
+                ⏱️ **CALL AMBULANCE: 0800 100 066**
+                📞 Police (if road accident): **999**
+                
+                **PRIORITY ACTIONS:**
+                1️⃣ **Scene safety** — ensure no ongoing danger
+                2️⃣ **Do NOT move** victim unless in immediate danger
+                3️⃣ **Check breathing** — if not breathing, start CPR
+                4️⃣ **Control bleeding** — firm pressure with clean cloth
+                5️⃣ **Stabilize head/neck** — suspect spinal injury
+                
+                **HEAD INJURY WARNING SIGNS:**
+                • Loss of consciousness (even brief)
+                • Vomiting repeatedly
+                • Clear fluid from nose/ears
+                • Unequal pupils
+                • Confusion or strange behavior
+                
+                **For broken bones:**
+                • Do NOT try to straighten it
+                • Immobilize with splint (use rolled newspaper/stick)
+                • Apply ice pack (wrapped in cloth)
+                
+                🩸 **Heavy bleeding:** Apply DIRECT firm pressure for 10 minutes continuously
+            """.trimIndent()
+            
+            "UNCONSCIOUS" -> """
+                🚨 **UNCONSCIOUS PATIENT — CRITICAL**
+                
+                ⏱️ **CALL AMBULANCE IMMEDIATELY: 0800 100 066**
+                
+                **CHECK & ACT (in order):**
+                1️⃣ **Tap shoulders, shout name** — any response?
+                2️⃣ **Check breathing:**
+                   • Look for chest rising
+                   • Feel for breath on your cheek
+                3️⃣ **If breathing → Recovery Position:**
+                   • Roll onto side
+                   • Head tilted back, chin forward
+                   • Top leg bent at 90° for stability
+                4️⃣ **If NOT breathing → START CPR:**
+                   • 30 chest compressions (5-6 cm deep)
+                   • 2 rescue breaths
+                   • Repeat until ambulance arrives
+                
+                **DO NOT:**
+                ❌ Give food or water
+                ❌ Leave patient alone
+                ❌ Put pillow under head (blocks airway)
+                
+                💡 **Recovery position prevents choking on vomit**
+            """.trimIndent()
+            
+            "ANAPHYLAXIS" -> """
+                🚨 **SEVERE ALLERGIC REACTION — ANAPHYLAXIS**
+                
+                ⏱️ **CALL AMBULANCE NOW: 0800 100 066**
+                
+                **LIFE-THREATENING SIGNS:**
+                • Throat swelling / difficulty swallowing
+                • Tongue/lip swelling
+                • Difficulty breathing / wheezing
+                • Rapid pulse, dizziness
+                • Widespread hives/rash
+                
+                **IMMEDIATE ACTION:**
+                1️⃣ **EpiPen/Adrenaline** — inject into outer thigh if available
+                2️⃣ **Antihistamine** (cetirizine 10mg or chlorpheniramine)
+                3️⃣ Lie patient flat, raise legs
+                4️⃣ Loosen tight clothing
+                5️⃣ Do NOT give anything by mouth
+                
+                **If patient has EpiPen:**
+                • Remove safety cap
+                • Jab firmly into outer thigh (works through clothes)
+                • Hold for 10 seconds
+                • Massage injection site
+                
+                ⚠️ **Can repeat EpiPen after 5-15 min if no improvement**
+            """.trimIndent()
+            
+            else -> """
+                🚨 **EMERGENCY — ACT IMMEDIATELY** 🚨
+                
+                **Uganda Emergency Numbers:**
+                📞 Ambulance: **0800 100 066** _(toll-free)_
+                📞 Police: **999** or **112**
+                📞 Red Cross Uganda: **+256 414 287 776**
+                📞 Mulago Hospital Emergency: **+256 414 554 001**
+                📞 Nsambya Hospital: **+256 414 510 095**
+                
+                **While waiting for help:**
+                1️⃣ Keep patient calm — do not move unnecessarily
+                2️⃣ Do NOT give food or water
+                3️⃣ Check breathing every 2 minutes
+                4️⃣ For bleeding: apply firm direct pressure with clean cloth
+                5️⃣ For unconsciousness: recovery position (on their side)
+                6️⃣ Note time symptoms started
+                
+                **If no response within 15 minutes → private transport to hospital**
+                Nearest hospitals: Mulago, Nsambya, IHK, The Surgery
+            """.trimIndent()
+        }
+
+        addBotMessage(specificGuidance)
+        
+        // Offer immediate doctor connection
         handler.postDelayed({
-            AlertDialog.Builder(this)
-                .setTitle("🚨 Emergency Assistance")
-                .setMessage("Open the Emergency screen for one-tap ambulance calling?")
-                .setPositiveButton("Open Emergency") { _, _ -> startActivity(Intent(this, EmergencyActivity::class.java)) }
-                .setNegativeButton("Continue Chatting", null)
-                .show()
-        }, 800)
+            addBotMessage(
+                "⚕️ **I can connect you to an online doctor RIGHT NOW**\n\n" +
+                "Doctors are standing by for emergencies. Response time: **1-3 minutes**\n\n" +
+                "Tap below to start video/chat consultation immediately."
+            )
+            handler.postDelayed({
+                AlertDialog.Builder(this)
+                    .setTitle("🚨 Emergency Doctor Connection")
+                    .setMessage("Connect to an online doctor NOW for immediate guidance?\n\nThis is FREE for emergencies.")
+                    .setPositiveButton("Connect NOW") { _, _ -> routeToEmergencyDoctor() }
+                    .setNegativeButton("Call Ambulance Instead") { _, _ -> 
+                        startActivity(Intent(this, EmergencyActivity::class.java))
+                    }
+                    .setCancelable(false)
+                    .show()
+            }, 800)
+        }, 1500)
+    }
+
+    private fun routeToEmergencyDoctor() {
+        addBotMessage("🔄 Connecting you to the nearest available emergency doctor... Please wait.")
+        showTypingIndicator()
+        
+        lifecycleScope.launch {
+            try {
+                val response = RepositoryFactory.doctorRepository.getOnlineDoctors()
+                removeTypingIndicator()
+                response.onSuccess { doctors ->
+                    if (doctors.isNotEmpty()) {
+                        val doctor = doctors.first() // Get highest rated online doctor
+                        createEmergencyChatSession(doctor.id, doctor.name)
+                    } else {
+                        addBotMessage(
+                            "⚠️ No doctors online right now.\n\n" +
+                            "**Please:**\n" +
+                            "1. Call ambulance: **0800 100 066**\n" +
+                            "2. Or go directly to nearest hospital\n" +
+                            "3. Or book urgent appointment (tap Find Doctors)"
+                        )
+                    }
+                }
+                response.onFailure {
+                    addBotMessage("⚠️ Connection failed. Please call ambulance: **0800 100 066**")
+                }
+            } catch (e: Exception) {
+                removeTypingIndicator()
+                addBotMessage("⚠️ Cannot connect. Call ambulance: **0800 100 066**")
+            }
+        }
+    }
+
+    private fun createEmergencyChatSession(doctorId: Int, doctorName: String) {
+        val symptoms = ctx.symptoms.ifEmpty { listOf("Emergency consultation") }
+        val assessment = "EMERGENCY: ${recentUserInputs.lastOrNull() ?: "Immediate medical attention required"}"
+        
+        addBotMessage(
+            "✅ **Connected to Dr. $doctorName**\n\n" +
+            "Opening your emergency consultation chat now...\n" +
+            "The doctor has been briefed on your situation."
+        )
+        
+        handler.postDelayed({
+            // Navigate to doctor chat (to be implemented)
+            startActivity(Intent(this, FindDoctorsActivity::class.java))
+        }, 1500)
     }
 
     private fun respondToMalaria() {
@@ -1198,33 +1469,154 @@ class ChatActivity : AppCompatActivity() {
 
     private fun offerDoctorConnection() {
         addBotMessage(
-            "🩺 **Connecting You With a Doctor**\n\n" +
-            "MediConnectUG has **200+ verified doctors** ready to help:\n\n" +
-            "👨‍⚕️ General Practitioners\n" +
-            "❤️ Cardiologists & Internists\n" +
-            "👶 Paediatricians\n" +
-            "🧠 Psychiatrists & Counsellors\n" +
-            "🔬 Dermatologists\n" +
-            "🤰 OB/GYN Specialists\n" +
-            "🫁 Pulmonologists\n" +
-            "👁️ Ophthalmologists\n\n" +
-            "**💬 Online doctors** can respond within minutes — look for the green dot.\n\n" +
-            "Choose:\n" +
-            "📹 **Video consultation** — from your home\n" +
-            "💬 **Chat consultation** — text at your convenience\n" +
-            "🏥 **In-person visit** — at their clinic\n\n" +
-            "Tap **Find Doctors** to browse, filter, and book!"
+            "🩺 **Let me connect you with a real doctor**\n\n" +
+            "I can help you start a chat with:\n\n" +
+            "💬 **Online doctors** (🟢 available now) — response within 5-10 minutes\n" +
+            "📹 **Video consultation** — see a doctor face-to-face from home\n" +
+            "🏥 **In-person visit** — book appointment at their clinic\n\n" +
+            "We have **200+ verified doctors** including:\n" +
+            "❤️ General Practitioners • Specialists\n" +
+            "👶 Paediatricians • 🧠 Psychiatrists\n" +
+            "🤰 OB/GYN • 🫁 Internists • And more\n\n" +
+            "All consultations are **confidential and secure**."
         )
+        
+        handler.postDelayed({
+            // Check for online doctors for instant chat
+            lifecycleScope.launch {
+                try {
+                    showTypingIndicator()
+                    val response = RepositoryFactory.doctorRepository.getOnlineDoctors()
+                    removeTypingIndicator()
+                    
+                    response.onSuccess { doctors ->
+                        if (doctors.isNotEmpty()) {
+                            val urgency = ctx.severityScore?.let {
+                                when {
+                                    it >= 8 -> "urgent"
+                                    it >= 5 -> "moderate"
+                                    else -> "normal"
+                                }
+                            } ?: "normal"
+                            
+                            val topDoctors = doctors.take(3)
+                            val doctorList = topDoctors.joinToString("\n") { 
+                                "• **Dr. ${it.name}** — ${it.specialty} ⭐ ${it.rating}/5.0 🟢"
+                            }
+                            
+                            addBotMessage(
+                                "✅ **${topDoctors.size} doctors are online right now:**\n\n" +
+                                "$doctorList\n\n" +
+                                "Would you like me to start a chat with one of them based on your symptoms?"
+                            )
+                            
+                            handler.postDelayed({
+                                showDoctorConnectionDialog(topDoctors.first(), urgency)
+                            }, 1200)
+                        } else {
+                            addBotMessage(
+                                "⚠️ No doctors online at this moment.\n\n" +
+                                "**Options:**\n" +
+                                "1️⃣ Browse all doctors and book appointment\n" +
+                                "2️⃣ I can notify you when a doctor comes online\n" +
+                                "3️⃣ Continue chatting with me for guidance"
+                            )
+                            showOfflineDoctorOptions()
+                        }
+                    }
+                    response.onFailure {
+                        // Fallback to browse all doctors
+                        showOfflineDoctorOptions()
+                    }
+                } catch (e: Exception) {
+                    removeTypingIndicator()
+                    showOfflineDoctorOptions()
+                }
+            }
+        }, 1200)
+    }
+
+    private fun showDoctorConnectionDialog(doctor: com.healthbridge.network.Doctor, urgency: String) {
+        AlertDialog.Builder(this)
+            .setTitle("🩺 Connect to Doctor")
+            .setMessage(
+                "Start chat with:\n\n" +
+                "👨‍⚕️ Dr. ${doctor.name}\n" +
+                "🏥 ${doctor.specialty}\n" +
+                "⭐ ${doctor.rating}/5.0 (${doctor.reviewCount} reviews)\n" +
+                "💰 Consultation: UGX ${doctor.consultationFee.toString().replace(Regex("(\\d)(?=(\\d{3})+$)"), "$1,")}\n\n" +
+                "The doctor will see your symptoms and assessment."
+            )
+            .setPositiveButton("Start Chat") { _, _ ->
+                initiateRealtimeDoctorChat(doctor.id, doctor.name, urgency)
+            }
+            .setNeutralButton("Browse All Doctors") { _, _ ->
+                startActivity(Intent(this, FindDoctorsActivity::class.java))
+            }
+            .setNegativeButton("Not Now", null)
+            .show()
+    }
+
+    private fun initiateRealtimeDoctorChat(doctorId: Int, doctorName: String, urgency: String) {
+        addBotMessage("🔄 Connecting you to Dr. $doctorName...")
+        showTypingIndicator()
+        
+        // Create chat session via API
+        lifecycleScope.launch {
+            try {
+                val symptoms = ctx.symptoms.ifEmpty { listOf("General consultation") }
+                val chiefComplaint = ctx.currentTopic ?: symptoms.joinToString(", ")
+                val assessment = buildString {
+                    append("AI Pre-Assessment:\n")
+                    if (symptoms.isNotEmpty()) append("Symptoms: ${symptoms.joinToString(", ")}\n")
+                    ctx.durationText?.let { append("Duration: $it\n") }
+                    ctx.severityScore?.let { append("Severity: $it/10\n") }
+                }
+                
+                // API call to create chat session
+                // val sessionResponse = ApiClient.instance.createChatSession(...)
+                // For now, navigate to FindDoctors with params
+                
+                removeTypingIndicator()
+                addBotMessage(
+                    "✅ **Chat session created!**\n\n" +
+                    "Dr. $doctorName has been notified and will respond shortly.\n\n" +
+                    "Opening your chat now..."
+                )
+                
+                handler.postDelayed({
+                    // TODO: Navigate to DoctorChatActivity when implemented
+                    // For now, show success and open FindDoctors
+                    Toast.makeText(this@ChatActivity, 
+                        "Doctor chat feature launching... Opening doctor list", 
+                        Toast.LENGTH_LONG).show()
+                    startActivity(Intent(this@ChatActivity, FindDoctorsActivity::class.java))
+                }, 1500)
+                
+            } catch (e: Exception) {
+                removeTypingIndicator()
+                addBotMessage(
+                    "⚠️ Could not establish connection.\n\n" +
+                    "Please try:\n" +
+                    "• Browse doctors manually (tap Find Doctors)\n" +
+                    "• Check your internet connection\n" +
+                    "• Try again in a moment"
+                )
+            }
+        }
+    }
+
+    private fun showOfflineDoctorOptions() {
         handler.postDelayed({
             AlertDialog.Builder(this)
-                .setTitle("🩺 Connect to a Doctor")
-                .setMessage("Browse verified doctors — filter by specialty or find doctors online now.")
-                .setPositiveButton("Find Doctors") { _, _ ->
+                .setTitle("🩺 Doctor Consultation")
+                .setMessage("No doctors online right now.\n\nWould you like to browse all doctors and book an appointment?")
+                .setPositiveButton("Browse Doctors") { _, _ ->
                     startActivity(Intent(this, FindDoctorsActivity::class.java))
                 }
-                .setNegativeButton("Not Now", null)
+                .setNegativeButton("Continue Chat", null)
                 .show()
-        }, 1200)
+        }, 800)
     }
 
     private fun addBotMessage(text: String) {

@@ -58,7 +58,10 @@
         <activity android:name=".OnboardingActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="false" />
         <activity android:name=".RegisterActivity" android:exported="false" />
+        <activity android:name=".DoctorRegisterActivity" android:exported="false" />
         <activity android:name=".HomeActivity" android:exported="false" />
+        <activity android:name=".DoctorHomeActivity" android:exported="false" />
+        <activity android:name=".DoctorChatActivity" android:exported="false" />
         <activity android:name=".FindDoctorsActivity" android:exported="false" />
         <activity android:name=".MyAppointmentsActivity" android:exported="false" />
         <activity android:name=".EmergencyActivity" android:exported="false" />

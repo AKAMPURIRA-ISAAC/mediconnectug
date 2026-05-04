@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 class LoginActivity : AppCompatActivity() {
 
     private var passwordVisible = false
+    private var isDoctorLogin = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +31,21 @@ class LoginActivity : AppCompatActivity() {
         val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
         val tvTogglePassword = findViewById<TextView>(R.id.tvTogglePassword)
         val btnFacebook = findViewById<LinearLayout>(R.id.btnFacebook)
+        
+        // Add toggle for doctor/patient login
+        val tvToggleUserType = TextView(this).apply {
+            text = "👨‍⚕️ Login as Doctor"
+            textSize = 14f
+            setTextColor(0xFF2196F3.toInt())
+            setPadding(0, 20, 0, 20)
+            gravity = android.view.Gravity.CENTER
+            setOnClickListener {
+                isDoctorLogin = !isDoctorLogin
+                text = if (isDoctorLogin) "👤 Login as Patient" else "👨‍⚕️ Login as Doctor"
+                btnLogin.text = if (isDoctorLogin) "Login as Doctor" else "Login"
+            }
+        }
+        findViewById<LinearLayout>(R.id.rootLayout)?.addView(tvToggleUserType, 2) // Insert after title
 
         tvTogglePassword.setOnClickListener {
             passwordVisible = !passwordVisible
@@ -65,16 +81,21 @@ class LoginActivity : AppCompatActivity() {
         }
 
         tvRegister.setOnClickListener {
-            startActivity(Intent(this, RegisterActivity::class.java))
+            if (isDoctorLogin) {
+                startActivity(Intent(this, DoctorRegisterActivity::class.java))
+            } else {
+                startActivity(Intent(this, RegisterActivity::class.java))
+            }
         }
     }
 
     private fun attemptLogin(email: String, password: String, btnLogin: Button) {
         lifecycleScope.launch {
             try {
-                val response = ApiClient.instance.login(LoginRequest(email, password))
+                val userType = if (isDoctorLogin) "doctor" else "patient"
+                val response = ApiClient.instance.login(LoginRequest(email, password, userType))
                 if (response.success) {
-                    saveUserAndNavigate(email, response.user?.name, response.token)
+                    saveUserAndNavigate(email, response.user?.name, response.token, response.user?.userType)
                 } else {
                     Toast.makeText(
                         this@LoginActivity,
@@ -113,19 +134,18 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveUserAndNavigate(email: String, name: String?, token: String? = null) {
+    private fun saveUserAndNavigate(email: String, name: String?, token: String? = null, userType: String? = "patient") {
         val prefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
             putString("userEmail", email)
+            putString("userType", userType ?: "patient")
             if (!name.isNullOrBlank()) putString("userName", name)
             if (!token.isNullOrBlank()) {
                 putString("auth_token", token)
                 ApiClient.authToken = token   // set in-memory for this session
             } else {
                 // Fallback / offline login — always restore any previously saved token
-                // so that authenticated API calls (bookings etc.) still work if the
-                // user was previously fully logged in.
                 val existing = prefs.getString("auth_token", null)
                 if (!existing.isNullOrBlank()) {
                     ApiClient.authToken = existing
@@ -133,13 +153,18 @@ class LoginActivity : AppCompatActivity() {
             }
             apply()
         }
-        Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, HomeActivity::class.java))
+        
+        val successMessage = if (userType == "doctor") "Doctor Login Successful" else "Login Successful"
+        Toast.makeText(this, successMessage, Toast.LENGTH_SHORT).show()
+        
+        // Navigate to appropriate home screen
+        val targetActivity = if (userType == "doctor") DoctorHomeActivity::class.java else HomeActivity::class.java
+        startActivity(Intent(this, targetActivity))
         finish()
     }
 
     private fun resetButton(btnLogin: Button) {
         btnLogin.isEnabled = true
-        btnLogin.text = "login"
+        btnLogin.text = if (isDoctorLogin) "Login as Doctor" else "login"
     }
 }

@@ -55,6 +55,53 @@ class DoctorRepository(
             }
         }
     }
+
+    suspend fun getOnlineDoctors(): Result<List<Doctor>> {
+        try {
+            val response = apiService.getOnlineDoctors()
+            if (response.success && response.doctors != null) {
+                return Result.success(response.doctors)
+            } else {
+                // Fallback to local doctors marked as online
+                val localOnline = doctorDao.getAllDoctors().filter { it.isOnline }
+                if (localOnline.isNotEmpty()) {
+                    val doctors = localOnline.map { entity ->
+                        Doctor(
+                            id = entity.id,
+                            name = entity.name,
+                            specialty = entity.specialty,
+                            rating = entity.rating,
+                            reviewCount = entity.reviewCount,
+                            consultationFee = entity.consultationFee,
+                            experienceYears = entity.experienceYears,
+                            isOnline = true
+                        )
+                    }
+                    return Result.success(doctors)
+                }
+                return Result.failure(Exception(response.error ?: "No doctors online"))
+            }
+        } catch (exception: Exception) {
+            // Fallback to cached online doctors
+            val cachedOnline = doctorDao.getAllDoctors().filter { it.isOnline }
+            if (cachedOnline.isNotEmpty()) {
+                val doctors = cachedOnline.map { entity ->
+                    Doctor(
+                        id = entity.id,
+                        name = entity.name,
+                        specialty = entity.specialty,
+                        rating = entity.rating,
+                        reviewCount = entity.reviewCount,
+                        consultationFee = entity.consultationFee,
+                        experienceYears = entity.experienceYears,
+                        isOnline = true
+                    )
+                }
+                return Result.success(doctors)
+            }
+            return Result.failure(exception)
+        }
+    }
 }
 
 

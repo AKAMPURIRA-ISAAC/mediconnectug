@@ -30,7 +30,8 @@ data class DoctorResponse(
 // ── Auth models ────────────────────────────────────────────
 data class LoginRequest(
     @SerializedName("email") val email: String,
-    @SerializedName("password") val password: String
+    @SerializedName("password") val password: String,
+    @SerializedName("user_type") val userType: String? = null  // "patient" | "doctor"
 )
 
 data class RegisterRequest(
@@ -40,11 +41,23 @@ data class RegisterRequest(
     @SerializedName("password") val password: String
 )
 
+data class DoctorRegisterRequest(
+    @SerializedName("name") val name: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("phone") val phone: String,
+    @SerializedName("password") val password: String,
+    @SerializedName("specialty") val specialty: String,
+    @SerializedName("hospital") val hospital: String,
+    @SerializedName("license_number") val licenseNumber: String
+)
+
 data class AuthUser(
     @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String,
     @SerializedName("email") val email: String,
-    @SerializedName("phone") val phone: String? = null
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("user_type") val userType: String? = null,  // "patient" | "doctor"
+    @SerializedName("doctor_id") val doctorId: Int? = null  // Only for doctor users
 )
 
 data class AuthResponse(
@@ -209,6 +222,55 @@ data class MarkReadResponse(
     @SerializedName("error") val error: String? = null
 )
 
+// ── Doctor-Patient Chat Session models ────────────────────
+data class ChatSession(
+    @SerializedName("id") val id: Int,
+    @SerializedName("patient_id") val patientId: Int,
+    @SerializedName("patient_name") val patientName: String,
+    @SerializedName("doctor_id") val doctorId: Int?,
+    @SerializedName("doctor_name") val doctorName: String?,
+    @SerializedName("chief_complaint") val chiefComplaint: String,
+    @SerializedName("urgency") val urgency: String,  // "URGENT", "MODERATE", "MILD"
+    @SerializedName("status") val status: String,    // "waiting", "active", "completed"
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("last_message_at") val lastMessageAt: String?
+)
+
+data class DirectMessage(
+    @SerializedName("id") val id: Int? = null,
+    @SerializedName("session_id") val sessionId: Int,
+    @SerializedName("sender_id") val senderId: Int,
+    @SerializedName("sender_name") val senderName: String,
+    @SerializedName("sender_type") val senderType: String,  // "patient" | "doctor"
+    @SerializedName("message") val message: String,
+    @SerializedName("timestamp") val timestamp: String,
+    @SerializedName("is_read") val isRead: Boolean = false
+)
+
+data class CreateChatSessionRequest(
+    @SerializedName("chief_complaint") val chiefComplaint: String,
+    @SerializedName("symptoms") val symptoms: String?,
+    @SerializedName("urgency") val urgency: String?  // "URGENT", "MODERATE", "MILD"
+)
+
+data class SendMessageRequest(
+    @SerializedName("message") val message: String
+)
+
+data class ChatSessionResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("session") val session: ChatSession? = null,
+    @SerializedName("sessions") val sessions: List<ChatSession>? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class DirectMessagesResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("messages") val messages: List<DirectMessage>? = null,
+    @SerializedName("message") val message: DirectMessage? = null,
+    @SerializedName("error") val error: String? = null
+)
+
 // ── API Interface ──────────────────────────────────────────
 interface ApiService {
 
@@ -216,12 +278,21 @@ interface ApiService {
     @GET("api/doctors")
     suspend fun getDoctors(): DoctorResponse
 
+    @GET("api/doctors/online")
+    suspend fun getOnlineDoctors(): DoctorResponse
+
     // Auth
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
     @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
+
+    @POST("api/auth/register-doctor")
+    suspend fun registerDoctor(@Body request: DoctorRegisterRequest): AuthResponse
+
+    @POST("api/auth/logout")
+    suspend fun logout(): AuthResponse
 
     // Appointments
     @GET("api/appointments")
@@ -279,6 +350,22 @@ interface ApiService {
 
     @PUT("api/notifications/read-all")
     suspend fun markAllNotificationsAsRead(): MarkReadResponse
+
+    // Patient-Doctor Chat Sessions
+    @POST("api/chat-sessions")
+    suspend fun createChatSession(@Body request: CreateChatSessionRequest): ChatSessionResponse
+
+    @GET("api/chat-sessions")
+    suspend fun getChatSessions(): ChatSessionResponse
+
+    @GET("api/chat-sessions/{session_id}/messages")
+    suspend fun getChatSessionMessages(@Path("session_id") sessionId: Int): DirectMessagesResponse
+
+    @POST("api/chat-sessions/{session_id}/messages")
+    suspend fun sendDirectMessage(@Path("session_id") sessionId: Int, @Body request: SendMessageRequest): DirectMessagesResponse
+
+    @PUT("api/chat-sessions/{session_id}/read")
+    suspend fun markMessagesAsRead(@Path("session_id") sessionId: Int): MarkReadResponse
 }
 
 // ── Singleton client with auth interceptor ─────────────────

@@ -49,30 +49,121 @@ app.post('/api/auth/register', async (req, res) => {
     if (exists.rows.length) return res.status(409).json({ success: false, error: 'Email already registered' });
     const hash = await bcrypt.hash(password, 10);
     const r = await pool.query(
-      'INSERT INTO users (name,email,phone,password_hash) VALUES($1,$2,$3,$4) RETURNING id,name,email,phone',
-      [name, email, phone || null, hash]
+      'INSERT INTO users (name,email,phone,password_hash,user_type) VALUES($1,$2,$3,$4,$5) RETURNING id,name,email,phone,user_type',
+      [name, email, phone || null, hash, 'patient']
     );
     const user = r.rows[0];
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, email: user.email, user_type: 'patient' }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ success: true, token, user });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
+app.post('/api/auth/register-doctor', async (req, res) => {
+  const { name, email, phone, password, specialty, hospital, license_number } = req.body;
+  if (!name || !email || !password || !specialty || !hospital || !license_number)
+    return res.status(400).json({ success: false, error: 'All fields are required' });
+  try {
+    // Check if email already exists
+    const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (exists.rows.length) return res.status(409).json({ success: false, error: 'Email already registered' });
+
+    const hash = await bcrypt.hash(password, 10);
+
+    // Create user account with doctor type
+    const userResult = await pool.query(
+      'INSERT INTO users (name,email,phone,password_hash,user_type) VALUES($1,$2,$3,$4,$5) RETURNING id,name,email,phone,user_type',
+      [name, email, phone || null, hash, 'doctor']
+    );
+    const user = userResult.rows[0];
+
+    // Create doctor profile
+    const doctorResult = await pool.query(
+      `INSERT INTO doctors (name, specialty, rating, review_count, consultation_fee, experience_years, hospital, license_number, user_id, is_online)
+       VALUES($1, $2, 5.0, 0, 50000, 5, $3, $4, $5, false) RETURNING id`,
+      [name, specialty, hospital, license_number, user.id]
+    );
+    const doctorId = doctorResult.rows[0].id;
+
+    const token = jwt.sign({ id: user.id, email: user.email, user_type: 'doctor', doctor_id: doctorId }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        user_type: 'doctor',
+        doctor_id: doctorId
+      }
+    });
+  } catch (e) {
+    console.error('Doctor registration error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, user_type } = req.body;
   if (!email || !password)
     return res.status(400).json({ success: false, error: 'email and password are required' });
   try {
     const r = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
     if (!r.rows.length) return res.status(401).json({ success: false, error: 'Invalid credentials' });
     const user = r.rows[0];
+
+    // Verify user type matches if specified
+    if (user_type && user.user_type !== user_type) {
+      return res.status(401).json({ success: false, error: `This account is not a ${user_type} account` });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } });
+    let doctorId = null;
+    if (user.user_type === 'doctor') {
+      const doctorResult = await pool.query('SELECT id FROM doctors WHERE user_id=$1', [user.id]);
+      if (doctorResult.rows.length) {
+        doctorId = doctorResult.rows[0].id;
+        // Update doctor online status
+        await pool.query('UPDATE doctors SET is_online=true WHERE id=$1', [doctorId]);
+      }
+    }
+
+    const token = jwt.sign({
+      id: user.id,
+      email: user.email,
+      user_type: user.user_type || 'patient',
+      doctor_id: doctorId
+    }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        user_type: user.user_type || 'patient',
+        doctor_id: doctorId
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/auth/logout', auth, async (req, res) => {
+  try {
+    // If user is a doctor, mark them as offline
+    if (req.user.doctor_id) {
+      await pool.query('UPDATE doctors SET is_online=false WHERE id=$1', [req.user.doctor_id]);
+    }
+    res.json({ success: true, message: 'Logged out successfully' });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
@@ -368,6 +459,194 @@ app.delete('/api/chat/history/:conversation_id', auth, async (req, res) => {
   try {
     await pool.query('DELETE FROM chat_messages WHERE conversation_id=$1 AND user_id=$2', [req.params.conversation_id, req.user.id]);
     res.json({ success: true, message: 'Chat history cleared' });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PATIENT-DOCTOR CHAT
+// ════════════════════════════════════════════════════════════════════════════
+
+// Create new chat session (AI escalation to doctor)
+app.post('/api/chat-sessions', auth, async (req, res) => {
+  const { doctor_id, urgency_level, chief_complaint, symptoms, severity_score, duration_text, ai_assessment } = req.body;
+  try {
+    // Start a chat session
+    const sessionResult = await pool.query(
+      `INSERT INTO chat_sessions (patient_id, doctor_id, session_type, urgency_level, chief_complaint)
+       VALUES($1, $2, 'doctor_chat', $3, $4) RETURNING id`,
+      [req.user.id, doctor_id, urgency_level || 'normal', chief_complaint || 'General consultation']
+    );
+    const sessionId = sessionResult.rows[0].id;
+
+    // Create escalation record
+    await pool.query(
+      `INSERT INTO ai_escalations (user_id, doctor_id, reason, urgency, symptoms, severity_score, duration_text, ai_assessment)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [req.user.id, doctor_id, chief_complaint || 'AI referral', urgency_level || 'moderate',
+       symptoms || [], severity_score, duration_text, ai_assessment]
+    );
+
+    // Get doctor details
+    const docResult = await pool.query(
+      'SELECT id, name, specialty, is_online FROM doctors WHERE id=$1',
+      [doctor_id]
+    );
+
+    res.json({
+      success: true,
+      session_id: sessionId,
+      doctor: docResult.rows[0],
+      message: 'Chat session created'
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Get patient's active chat sessions
+app.get('/api/chat-sessions', auth, async (req, res) => {
+  try {
+    const isDoctor = req.user.user_type === 'doctor';
+    let r;
+
+    if (isDoctor) {
+      // Get sessions for this doctor
+      r = await pool.query(
+        `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
+           cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
+         FROM chat_sessions cs
+         JOIN users u ON cs.patient_id = u.id
+         LEFT JOIN doctors d ON cs.doctor_id = d.id
+         WHERE cs.doctor_id=$1
+         ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC`,
+        [req.user.doctor_id]
+      );
+    } else {
+      // Get sessions for this patient
+      r = await pool.query(
+        `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
+           cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
+         FROM chat_sessions cs
+         JOIN users u ON cs.patient_id = u.id
+         LEFT JOIN doctors d ON cs.doctor_id = d.id
+         WHERE cs.patient_id=$1
+         ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC`,
+        [req.user.id]
+      );
+    }
+
+    res.json({ success: true, sessions: r.rows });
+  } catch (e) {
+    console.error('Get chat sessions error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Get messages in a chat session
+app.get('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT dm.id, dm.session_id, dm.sender_id, dm.sender_type, dm.message, dm.is_read, dm.created_at,
+         CASE
+           WHEN dm.sender_type = 'patient' THEN u.name
+           WHEN dm.sender_type = 'doctor' THEN d.name
+         END as sender_name
+       FROM direct_messages dm
+       LEFT JOIN users u ON dm.sender_id = u.id AND dm.sender_type = 'patient'
+       LEFT JOIN doctors d ON dm.sender_id = d.id AND dm.sender_type = 'doctor'
+       WHERE dm.session_id=$1
+       ORDER BY dm.created_at ASC`,
+      [req.params.session_id]
+    );
+
+    const messages = r.rows.map(msg => ({
+      id: msg.id,
+      session_id: msg.session_id,
+      sender_id: msg.sender_id,
+      sender_name: msg.sender_name,
+      sender_type: msg.sender_type,
+      message: msg.message,
+      timestamp: msg.created_at,
+      is_read: msg.is_read
+    }));
+
+    res.json({ success: true, messages });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Send message in chat session
+app.post('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
+  const { message_text, attachment_url } = req.body;
+  const sender_type = req.user.user_type === 'doctor' ? 'doctor' : 'patient';
+
+  try {
+    const r = await pool.query(
+      `INSERT INTO direct_messages (session_id, sender_id, sender_type, message_text, attachment_url)
+       VALUES($1, $2, $3, $4, $5) RETURNING *`,
+      [req.params.session_id, req.user.id, sender_type, message_text, attachment_url || null]
+    );
+    res.json({ success: true, message: r.rows[0] });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Mark messages as read
+app.put('/api/chat-sessions/:session_id/read', auth, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE direct_messages SET is_read=true
+       WHERE session_id=$1 AND sender_id!=$2`,
+      [req.params.session_id, req.user.id]
+    );
+    res.json({ success: true, message: 'Messages marked as read' });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Get online doctors (for AI routing)
+app.get('/api/doctors/online', async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, name, specialty, is_online, rating
+       FROM doctors
+       WHERE is_online=true
+       ORDER BY rating DESC, experience_years DESC
+       LIMIT 10`
+    );
+    res.json({ success: true, doctors: r.rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Get pending escalations (for doctor dashboard)
+app.get('/api/escalations/pending', auth, async (req, res) => {
+  try {
+    if (req.user.user_type !== 'doctor') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    const r = await pool.query(
+      `SELECT e.*, u.name as patient_name, u.phone as patient_phone
+       FROM ai_escalations e
+       JOIN users u ON e.user_id = u.id
+       WHERE e.doctor_id=$1 AND e.status='pending'
+       ORDER BY
+         CASE e.urgency
+           WHEN 'emergency' THEN 1
+           WHEN 'urgent' THEN 2
+           WHEN 'moderate' THEN 3
+           ELSE 4
+         END,
+         e.created_at ASC`,
+      [req.user.id]
+    );
+    res.json({ success: true, escalations: r.rows });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
