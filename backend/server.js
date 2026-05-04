@@ -152,8 +152,13 @@ app.get('/api/appointments', auth, async (req, res) => {
 app.post('/api/appointments', auth, async (req, res) => {
   const { doctor_id, doctor_name, date, time, type, notes } = req.body;
   try {
-    const doc = await pool.query('SELECT consultation_fee FROM doctors WHERE id=$1', [doctor_id]);
+    // Fetch doctor details to get fee and specialty
+    const doc = await pool.query('SELECT consultation_fee, specialty FROM doctors WHERE id=$1', [doctor_id]);
+    if (!doc.rows.length) {
+      return res.status(404).json({ success: false, error: 'Doctor not found' });
+    }
     const fee = doc.rows[0]?.consultation_fee || 0;
+    const specialty = doc.rows[0]?.specialty || 'General';
 
     const r = await pool.query(
       `INSERT INTO appointments (user_id,doctor_id,appointment_date,appointment_time,type,status,fee,notes)
@@ -161,12 +166,25 @@ app.post('/api/appointments', auth, async (req, res) => {
        RETURNING id`,
       [req.user.id, doctor_id, date, time, type || 'in_person', fee, notes || null]
     );
+
+    // Return fields matching Android app's Appointment model exactly
     res.json({
       success: true,
       message: 'Appointment booked successfully',
-      appointment: { id: r.rows[0].id, doctor_name, date, time, type, status: 'upcoming', fee }
+      appointment: {
+        id: r.rows[0].id,
+        doctor_name,
+        specialty,
+        appointment_date: date,
+        appointment_time: time,
+        type: type || 'in_person',
+        status: 'upcoming',
+        fee,
+        notes: notes || null
+      }
     });
   } catch (e) {
+    console.error('Booking error:', e);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -179,8 +197,24 @@ app.put('/api/appointments/:id/reschedule', auth, async (req, res) => {
        WHERE id=$5 AND user_id=$6`,
       [date, time, type, notes, req.params.id, req.user.id]
     );
-    res.json({ success: true, message: 'Appointment rescheduled' });
+
+    // Fetch updated appointment with doctor details
+    const r = await pool.query(
+      `SELECT a.id, d.name as doctor_name, d.specialty,
+              a.appointment_date, a.appointment_time, a.type, a.status, a.fee, a.notes
+       FROM appointments a
+       JOIN doctors d ON d.id = a.doctor_id
+       WHERE a.id=$1 AND a.user_id=$2`,
+      [req.params.id, req.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Appointment rescheduled',
+      appointment: r.rows[0]
+    });
   } catch (e) {
+    console.error('Reschedule error:', e);
     res.status(500).json({ success: false, error: e.message });
   }
 });
