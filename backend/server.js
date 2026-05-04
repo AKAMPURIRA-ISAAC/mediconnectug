@@ -30,7 +30,11 @@ function auth(req, res, next) {
 }
 
 // ── Health check ─────────────────────────────────────────────────────────────
-app.get('/', (_, res) => res.json({ status: 'MediConnectUG API is live 🚀', version: '1.0.0' }));
+app.get('/', (_, res) => res.json({
+    status: 'MediConnectUG API is live',
+    version: '1.0.0',
+    db: process.env.DATABASE_URL ? 'configured' : 'NOT SET - add DATABASE_URL env var'
+}));
 
 // ════════════════════════════════════════════════════════════════════════════
 //  AUTH
@@ -53,11 +57,12 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ success: true, token, user });
   } catch (e) {
+    console.error('getDoctors error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/register'
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ success: false, error: 'email and password are required' });
