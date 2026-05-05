@@ -240,6 +240,30 @@ app.get('/api/appointments', auth, async (req, res) => {
   }
 });
 
+// Get doctor's patient appointments
+app.get('/api/doctor/appointments', auth, async (req, res) => {
+  try {
+    if (req.user.user_type !== 'doctor') {
+      return res.status(403).json({ success: false, error: 'Access denied - doctors only' });
+    }
+    // Get all appointments where the doctor is assigned
+    // Returns patient name as "doctor_name" for display compatibility
+    const r = await pool.query(
+      `SELECT a.id, u.name as doctor_name, d.specialty,
+              a.appointment_date, a.appointment_time, a.type, a.status, a.fee, a.notes
+       FROM appointments a
+       JOIN doctors d ON d.id = a.doctor_id
+       JOIN users u ON u.id = a.user_id
+       WHERE a.doctor_id=$1
+       ORDER BY a.appointment_date DESC`,
+      [req.user.doctor_id]
+    );
+    res.json({ success: true, appointments: r.rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.post('/api/appointments', auth, async (req, res) => {
   const { doctor_id, doctor_name, date, time, type, notes } = req.body;
   try {
@@ -474,9 +498,9 @@ app.post('/api/chat-sessions', auth, async (req, res) => {
   try {
     // Start a chat session
     const sessionResult = await pool.query(
-      `INSERT INTO chat_sessions (patient_id, doctor_id, session_type, urgency_level, chief_complaint)
-       VALUES($1, $2, 'doctor_chat', $3, $4) RETURNING id`,
-      [req.user.id, doctor_id, urgency_level || 'normal', chief_complaint || 'General consultation']
+      `INSERT INTO chat_sessions (patient_id, doctor_id, chief_complaint, urgency)
+       VALUES($1, $2, $3, $4) RETURNING id`,
+      [req.user.id, doctor_id, chief_complaint || 'General consultation', urgency_level || 'MODERATE']
     );
     const sessionId = sessionResult.rows[0].id;
 
@@ -513,28 +537,30 @@ app.get('/api/chat-sessions', auth, async (req, res) => {
 
     if (isDoctor) {
       // Get sessions for this doctor
-      r = await pool.query(
-        `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
-           cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
-         FROM chat_sessions cs
-         JOIN users u ON cs.patient_id = u.id
-         LEFT JOIN doctors d ON cs.doctor_id = d.id
-         WHERE cs.doctor_id=$1
-         ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC`,
-        [req.user.doctor_id]
-      );
+       r = await pool.query(
+         `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
+            cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
+          FROM chat_sessions cs
+          JOIN users u ON cs.patient_id = u.id
+          LEFT JOIN doctors d ON cs.doctor_id = d.id
+          WHERE cs.doctor_id=$1
+          ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC
+          LIMIT 50`,
+         [req.user.doctor_id]
+       );
     } else {
       // Get sessions for this patient
-      r = await pool.query(
-        `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
-           cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
-         FROM chat_sessions cs
-         JOIN users u ON cs.patient_id = u.id
-         LEFT JOIN doctors d ON cs.doctor_id = d.id
-         WHERE cs.patient_id=$1
-         ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC`,
-        [req.user.id]
-      );
+       r = await pool.query(
+         `SELECT cs.id, cs.patient_id, u.name as patient_name, cs.doctor_id, d.name as doctor_name,
+            cs.chief_complaint, cs.urgency, cs.status, cs.created_at, cs.last_message_at
+          FROM chat_sessions cs
+          JOIN users u ON cs.patient_id = u.id
+          LEFT JOIN doctors d ON cs.doctor_id = d.id
+          WHERE cs.patient_id=$1
+          ORDER BY cs.last_message_at DESC NULLS LAST, cs.created_at DESC
+          LIMIT 50`,
+         [req.user.id]
+       );
     }
 
     res.json({ success: true, sessions: r.rows });
@@ -557,11 +583,12 @@ app.get('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
        LEFT JOIN users u ON dm.sender_id = u.id AND dm.sender_type = 'patient'
        LEFT JOIN doctors d ON dm.sender_id = d.id AND dm.sender_type = 'doctor'
        WHERE dm.session_id=$1
-       ORDER BY dm.created_at ASC`,
+        ORDER BY dm.created_at DESC
+        LIMIT 100`,
       [req.params.session_id]
     );
 
-    const messages = r.rows.map(msg => ({
+    const messages = r.rows.reverse().map(msg => ({
       id: msg.id,
       session_id: msg.session_id,
       sender_id: msg.sender_id,
@@ -580,16 +607,45 @@ app.get('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
 
 // Send message in chat session
 app.post('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
-  const { message_text, attachment_url } = req.body;
+  const { message_text } = req.body;
   const sender_type = req.user.user_type === 'doctor' ? 'doctor' : 'patient';
 
   try {
+    // Insert the message
     const r = await pool.query(
-      `INSERT INTO direct_messages (session_id, sender_id, sender_type, message_text, attachment_url)
-       VALUES($1, $2, $3, $4, $5) RETURNING *`,
-      [req.params.session_id, req.user.id, sender_type, message_text, attachment_url || null]
+      `INSERT INTO direct_messages (session_id, sender_id, sender_type, message)
+       VALUES($1, $2, $3, $4) RETURNING
+       id, session_id, sender_id, sender_type, message, is_read, created_at`,
+      [req.params.session_id, req.user.id, sender_type, message_text]
     );
-    res.json({ success: true, message: r.rows[0] });
+
+    // Update last_message_at in chat_sessions
+    await pool.query(
+      `UPDATE chat_sessions SET last_message_at = NOW() WHERE id = $1`,
+      [req.params.session_id]
+    );
+
+    // Get sender name for response
+    let senderName = req.user.name || '';
+    if (sender_type === 'doctor' && req.user.doctor_id) {
+      const doctorResult = await pool.query('SELECT name FROM doctors WHERE id=$1', [req.user.doctor_id]);
+      senderName = doctorResult.rows[0]?.name || 'Doctor';
+    }
+
+    const message = r.rows[0];
+    res.json({
+      success: true,
+      message: {
+        id: message.id,
+        session_id: message.session_id,
+        sender_id: message.sender_id,
+        sender_type: message.sender_type,
+        sender_name: senderName,
+        message: message.message,
+        timestamp: message.created_at,
+        is_read: message.is_read
+      }
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
