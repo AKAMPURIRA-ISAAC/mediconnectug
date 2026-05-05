@@ -18,7 +18,7 @@ npm start
 
 # 2. Start Auto-Builder (in another terminal)
 cd D:\HealthBridge\android_app
-.\auto-build.ps1
+.\scripts\auto-build.ps1
 
 # 3. Code! APK rebuilds automatically on save
 ```
@@ -68,9 +68,10 @@ private const val USE_LOCAL_BACKEND = false // Production
 ```
 
 ### Automatic Build Scripts
-- `auto-build.ps1` - Continuous file watcher & rebuild
-- `quick-build.ps1` - Fast single builds
-- `build-install-run.ps1` - Complete workflow (build→install→launch)
+- `scripts\auto-build.ps1` - Continuous file watcher & rebuild
+- `scripts\quick-build.ps1` - Fast single builds
+- `scripts\build-install-run.ps1` - Complete workflow (build→install→launch)
+- `scripts\push-to-github.ps1` - Git automation
 
 ### Session Management
 - JWT tokens: 180-day expiry
@@ -164,7 +165,7 @@ git push origin main
 ### Quick Test Workflow
 ```powershell
 # Build, install, and launch
-.\build-install-run.ps1
+.\scripts\build-install-run.ps1
 ```
 
 ### Manual Testing
@@ -183,38 +184,89 @@ adb logcat -s HealthBridge:* ApiClient:*
 
 ## 📚 Documentation
 
-- **AUTOMATIC_BACKEND_SWITCHING.md** - Backend configuration guide
-- **AUTOMATIC_BUILDING.md** - Build automation guide  
-- **SESSION_TIMEOUT_UPDATE.md** - Session management details
-- **API_ENDPOINTS_POSTGRESQL.md** - Backend API documentation
-- **DATABASE_INTEGRATION_GUIDE.md** - Database setup
-- **DEPLOYMENT_GUIDE.md** - Production deployment
-- **HOW_NETWORKING_WORKS.md** - Network architecture
+### 🚀 Quick Start
+- **START_HERE.md** - 5-minute project overview ⭐
+- **PROJECT_STRUCTURE.md** - Complete project organization guide
+- **docs/QUICK_START_v2.0.0.md** - Setup instructions
+- **docs/REPOSITORY_QUICK_REFERENCE.md** - Repository API reference
+
+### 📖 Documentation Organization
+All documentation is organized in the **`docs/`** folder:
+
+```
+docs/
+├── guides/
+│   ├── development/        # Development guides (backend switching, building, etc.)
+│   ├── deployment/         # Deployment & production guides
+│   └── features/           # Feature implementation docs (AI chat, doctor chat, etc.)
+├── releases/               # Release notes & changelogs
+├── troubleshooting/        # Bug fixes & solutions
+└── archive/                # Historical documents
+```
+
+### 📂 Main Documentation Files
+- **[docs/README.md](docs/README.md)** - Documentation index & navigation
+- **[docs/guides/development/AUTOMATIC_BACKEND_SWITCHING.md](docs/guides/development/AUTOMATIC_BACKEND_SWITCHING.md)** - Backend configuration
+- **[docs/guides/development/AUTOMATIC_BUILDING.md](docs/guides/development/AUTOMATIC_BUILDING.md)** - Build automation
+- **[docs/guides/development/DATABASE_INTEGRATION_GUIDE.md](docs/guides/development/DATABASE_INTEGRATION_GUIDE.md)** - Database setup
+- **[docs/guides/deployment/DEPLOYMENT_GUIDE.md](docs/guides/deployment/DEPLOYMENT_GUIDE.md)** - Production deployment
+- **[docs/guides/features/API_ENDPOINTS_POSTGRESQL.md](docs/guides/features/API_ENDPOINTS_POSTGRESQL.md)** - API documentation
+- **[docs/releases/PRODUCTION_RELEASE_v2.1.3.md](docs/releases/PRODUCTION_RELEASE_v2.1.3.md)** - Latest release notes
+
+**See [docs/README.md](docs/README.md) for complete documentation index.**
 
 ---
 
-## 🎯 Key Files
+## 🎯 Key Project Structure
 
 ```
 android_app/
-├── app/
+├── 📄 README.md                       # This file
+├── 📄 START_HERE.md                   # Quick start guide ⭐
+├── 📄 PROJECT_STRUCTURE.md            # Complete structure reference
+│
+├── 📂 app/                            # Android application
 │   ├── src/main/
 │   │   ├── java/com/healthbridge/
-│   │   │   ├── network/ApiService.kt     # API & backend config
-│   │   │   ├── HomeActivity.kt           # Main dashboard
-│   │   │   ├── LoginActivity.kt          # Authentication
-│   │   │   ├── ChatActivity.kt           # AI assistant
-│   │   │   └── util/UpdateChecker.kt     # Auto-update system
-│   │   ├── res/                           # UI resources
-│   │   └── AndroidManifest.xml           # App config
-│   └── build.gradle.kts                   # App dependencies
-├── backend/
-│   ├── server.js                          # Express API server
-│   └── package.json                       # Node dependencies
-├── auto-build.ps1                         # File watcher script
-├── quick-build.ps1                        # Quick build script
-└── build-install-run.ps1                  # Full workflow script
+│   │   │   ├── network/
+│   │   │   │   └── ApiService.kt     # API & backend config ⚙️
+│   │   │   ├── activities/
+│   │   │   │   ├── HomeActivity.kt   # Main dashboard
+│   │   │   │   ├── LoginActivity.kt  # Authentication
+│   │   │   │   └── ChatActivity.kt   # AI assistant
+│   │   │   ├── data/
+│   │   │   │   ├── database/         # Room database
+│   │   │   │   └── repository/       # Repository pattern
+│   │   │   └── util/
+│   │   │       └── UpdateChecker.kt  # Auto-update system
+│   │   ├── res/                       # UI resources
+│   │   └── AndroidManifest.xml       # App config
+│   └── build.gradle.kts               # App dependencies
+│
+├── 📂 backend/                        # Node.js API server
+│   ├── server.js                      # Express API server
+│   └── package.json                   # Node dependencies
+│
+├── 📂 supabase/                       # Database schemas
+│   ├── schema.sql                     # Main schema
+│   └── doctor_chat_schema.sql         # Chat tables
+│
+├── 📂 docs/                           # 📚 All documentation
+│   ├── guides/                        # Implementation guides
+│   ├── releases/                      # Release notes
+│   ├── troubleshooting/               # Bug fixes
+│   └── archive/                       # Historical docs
+│
+├── 📂 scripts/                        # 🛠️ Build & automation
+│   ├── auto-build.ps1                 # File watcher
+│   ├── quick-build.ps1                # Quick builds
+│   ├── build-install-run.ps1          # Full workflow
+│   └── push-to-github.ps1             # Git automation
+│
+└── 📄 render.yaml                     # Backend deployment config
 ```
+
+**See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for complete details.**
 
 ---
 
