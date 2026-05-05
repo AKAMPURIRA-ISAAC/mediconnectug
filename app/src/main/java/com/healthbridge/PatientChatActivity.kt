@@ -37,6 +37,7 @@ class PatientChatActivity : AppCompatActivity() {
     private var sessionId: Int = -1
     private var myPatientId: Int = -1
     private var pollingRunnable: Runnable? = null
+    private var isLoadingMessages = false  // ← Prevent duplicate requests
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +78,8 @@ class PatientChatActivity : AppCompatActivity() {
     }
 
     private fun loadMessages() {
-        if (sessionId == -1) return
+        if (sessionId == -1 || isLoadingMessages) return  // ← Skip if already loading
+        isLoadingMessages = true
         lifecycleScope.launch {
             try {
                 val response = ApiClient.instance.getChatSessionMessages(sessionId)
@@ -95,14 +97,23 @@ class PatientChatActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 // Silently fail during polling
+            } finally {
+                isLoadingMessages = false  // ← Allow next request
             }
         }
     }
 
     private fun sendMessage() {
         val text = etMessage.text.toString().trim()
-        if (text.isEmpty() || sessionId == -1) return
+        if (text.isEmpty() || sessionId == -1) {
+            if (sessionId == -1) {
+                android.util.Log.e("PatientChat", "ERROR: Invalid session ID: $sessionId")
+                Toast.makeText(this, "Error: Invalid chat session", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
 
+        android.util.Log.d("PatientChat", "Sending message to session $sessionId: $text")
         etMessage.text.clear()
 
         lifecycleScope.launch {
@@ -111,13 +122,29 @@ class PatientChatActivity : AppCompatActivity() {
                     sessionId,
                     SendMessageRequest(text)
                 )
+                android.util.Log.d("PatientChat", "Message response: success=${response.success}, error=${response.error}")
+
                 if (response.success && response.message != null) {
+                    android.util.Log.d("PatientChat", "Message sent successfully: ${response.message.id}")
                     messages.add(response.message)
                     adapter.notifyItemInserted(messages.size - 1)
                     scrollToBottom()
+                } else {
+                    android.util.Log.e("PatientChat", "Failed to send message: ${response.error}")
+                    Toast.makeText(
+                        this@PatientChatActivity,
+                        "Failed to send: ${response.error ?: "Unknown error"}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@PatientChatActivity, "Failed to send message", Toast.LENGTH_SHORT).show()
+                android.util.Log.e("PatientChat", "Exception sending message", e)
+                e.printStackTrace()
+                Toast.makeText(
+                    this@PatientChatActivity,
+                    "Error: ${e.message ?: "Failed to send message"}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -140,10 +167,10 @@ class PatientChatActivity : AppCompatActivity() {
         pollingRunnable = object : Runnable {
             override fun run() {
                 loadMessages()
-                handler.postDelayed(this, 3000) // Poll every 3 seconds
+                handler.postDelayed(this, 5000) // Poll every 5 seconds (reduced from 3)
             }
         }
-        handler.postDelayed(pollingRunnable!!, 3000)
+        handler.postDelayed(pollingRunnable!!, 5000)
     }
 
     private fun stopPolling() {

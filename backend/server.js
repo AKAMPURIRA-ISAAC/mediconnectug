@@ -346,6 +346,108 @@ app.delete('/api/appointments/:id', auth, async (req, res) => {
   }
 });
 
+// Confirm appointment (doctor-only)
+app.put('/api/appointments/:id/confirm', auth, async (req, res) => {
+  try {
+    if (req.user.user_type !== 'doctor') {
+      return res.status(403).json({ success: false, error: 'Access denied - doctors only' });
+    }
+
+    // Fetch appointment with doctor details
+    const appointResult = await pool.query(
+      `SELECT a.*, d.name as doctor_name, u.name as patient_name, d.id as doctor_db_id
+       FROM appointments a
+       JOIN doctors d ON a.doctor_id = d.id
+       JOIN users u ON a.user_id = u.id
+       WHERE a.id=$1 AND a.doctor_id=$2`,
+      [req.params.id, req.user.doctor_id]
+    );
+
+    if (appointResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    const appt = appointResult.rows[0];
+
+    // Update appointment status
+    await pool.query(
+      "UPDATE appointments SET status='upcoming' WHERE id=$1",
+      [req.params.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Appointment confirmed',
+      appointment: {
+        id: appt.id,
+        doctor_name: appt.doctor_name,
+        specialty: appt.specialty,
+        appointment_date: appt.appointment_date,
+        appointment_time: appt.appointment_time,
+        type: appt.type,
+        status: 'upcoming',
+        fee: appt.fee,
+        notes: appt.notes
+      }
+    });
+  } catch (e) {
+    console.error('Confirm appointment error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Reject appointment (doctor-only)
+app.put('/api/appointments/:id/reject', auth, async (req, res) => {
+  try {
+    if (req.user.user_type !== 'doctor') {
+      return res.status(403).json({ success: false, error: 'Access denied - doctors only' });
+    }
+
+    const { reason } = req.body;
+
+    // Fetch appointment with doctor details
+    const appointResult = await pool.query(
+      `SELECT a.*, d.name as doctor_name, u.name as patient_name, d.id as doctor_db_id
+       FROM appointments a
+       JOIN doctors d ON a.doctor_id = d.id
+       JOIN users u ON a.user_id = u.id
+       WHERE a.id=$1 AND a.doctor_id=$2`,
+      [req.params.id, req.user.doctor_id]
+    );
+
+    if (appointResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    const appt = appointResult.rows[0];
+
+    // Update appointment status and store rejection reason
+    await pool.query(
+      "UPDATE appointments SET status='rejected', notes=COALESCE($1, notes) WHERE id=$2",
+      [`Rejected: ${reason || 'No reason provided'}`, req.params.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Appointment rejected',
+      appointment: {
+        id: appt.id,
+        doctor_name: appt.doctor_name,
+        specialty: appt.specialty,
+        appointment_date: appt.appointment_date,
+        appointment_time: appt.appointment_time,
+        type: appt.type,
+        status: 'rejected',
+        fee: appt.fee,
+        notes: appt.notes
+      }
+    });
+  } catch (e) {
+    console.error('Reject appointment error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 //  MEDICAL RECORDS
 // ════════════════════════════════════════════════════════════════════════════
@@ -492,39 +594,65 @@ app.delete('/api/chat/history/:conversation_id', auth, async (req, res) => {
 //  PATIENT-DOCTOR CHAT
 // ════════════════════════════════════════════════════════════════════════════
 
-// Create new chat session (AI escalation to doctor)
+// Create new chat session (patient initiates chat with doctor)
 app.post('/api/chat-sessions', auth, async (req, res) => {
   const { doctor_id, urgency_level, chief_complaint, symptoms, severity_score, duration_text, ai_assessment } = req.body;
   try {
     // Start a chat session
     const sessionResult = await pool.query(
-      `INSERT INTO chat_sessions (patient_id, doctor_id, chief_complaint, urgency)
-       VALUES($1, $2, $3, $4) RETURNING id`,
+      `INSERT INTO chat_sessions (patient_id, doctor_id, chief_complaint, urgency, status)
+       VALUES($1, $2, $3, $4, 'active') RETURNING id, patient_id, doctor_id, chief_complaint, urgency, status, created_at, last_message_at`,
       [req.user.id, doctor_id, chief_complaint || 'General consultation', urgency_level || 'MODERATE']
     );
-    const sessionId = sessionResult.rows[0].id;
+    const session = sessionResult.rows[0];
 
-    // Create escalation record
-    await pool.query(
-      `INSERT INTO ai_escalations (user_id, doctor_id, reason, urgency, symptoms, severity_score, duration_text, ai_assessment)
-       VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [req.user.id, doctor_id, chief_complaint || 'AI referral', urgency_level || 'moderate',
-       symptoms || [], severity_score, duration_text, ai_assessment]
-    );
+    // Try to create a chat session record in ai_escalations if table exists (optional)
+    try {
+      await pool.query(
+        `INSERT INTO ai_escalations (user_id, doctor_id, reason, urgency, symptoms, severity_score, duration_text, ai_assessment)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [req.user.id, doctor_id, chief_complaint || 'Patient initiated chat', urgency_level || 'moderate',
+         symptoms || null, severity_score || null, duration_text || null, ai_assessment || null]
+      );
+    } catch (escError) {
+      // Table might not exist, that's OK - just log and continue
+      console.log('Note: ai_escalations table not available, skipping escalation record');
+    }
 
     // Get doctor details
-    const docResult = await pool.query(
-      'SELECT id, name, specialty, is_online FROM doctors WHERE id=$1',
-      [doctor_id]
-    );
+    let doctorName = 'Doctor';
+    if (doctor_id) {
+      const docResult = await pool.query(
+        'SELECT id, name, specialty, is_online FROM doctors WHERE id=$1',
+        [doctor_id]
+      );
+      if (docResult.rows.length > 0) {
+        doctorName = docResult.rows[0].name;
+      }
+    }
+
+    // Get patient name
+    const patientResult = await pool.query('SELECT name FROM users WHERE id=$1', [req.user.id]);
+    const patientName = patientResult.rows[0]?.name || 'Patient';
 
     res.json({
       success: true,
-      session_id: sessionId,
-      doctor: docResult.rows[0],
+      session: {
+        id: session.id,
+        patientId: session.patient_id,
+        patientName: patientName,
+        doctorId: session.doctor_id,
+        doctorName: doctorName,
+        chiefComplaint: session.chief_complaint,
+        urgency: session.urgency,
+        status: session.status,
+        createdAt: session.created_at,
+        lastMessageAt: session.last_message_at
+      },
       message: 'Chat session created'
     });
   } catch (e) {
+    console.error('Error creating chat session:', e);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -570,6 +698,88 @@ app.get('/api/chat-sessions', auth, async (req, res) => {
   }
 });
 
+// Create chat session from appointment (doctor-initiated)
+app.post('/api/chat-sessions/from-appointment/:appointmentId', auth, async (req, res) => {
+  try {
+    const appointmentId = req.params.appointmentId;
+
+    // Get appointment details
+    const appointmentResult = await pool.query(`
+      SELECT a.*, u.name as patient_name, d.name as doctor_name, d.id as doctor_db_id
+      FROM appointments a
+      LEFT JOIN users u ON a.user_id = u.id
+      LEFT JOIN doctors d ON a.doctor_id = d.id
+      WHERE a.id = $1
+    `, [appointmentId]);
+
+    if (appointmentResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    const appointment = appointmentResult.rows[0];
+
+    // Check if chat session already exists for this appointment
+    const existingSession = await pool.query(`
+      SELECT cs.*, u.name as patient_name, d.name as doctor_name
+      FROM chat_sessions cs
+      LEFT JOIN users u ON cs.patient_id = u.id
+      LEFT JOIN doctors d ON cs.doctor_id = d.id
+      WHERE cs.patient_id = $1 AND cs.doctor_id = $2 AND cs.status = 'active'
+      ORDER BY cs.created_at DESC
+      LIMIT 1
+    `, [appointment.user_id, appointment.doctor_db_id]);
+
+    if (existingSession.rows.length > 0) {
+      const session = existingSession.rows[0];
+      return res.json({
+        success: true,
+        session: {
+          id: session.id,
+          patientId: session.patient_id,
+          patientName: session.patient_name,
+          doctorId: session.doctor_id,
+          doctorName: session.doctor_name,
+          chiefComplaint: session.chief_complaint,
+          urgency: session.urgency,
+          status: session.status,
+          createdAt: session.created_at,
+          lastMessageAt: session.last_message_at
+        },
+        message: 'Using existing chat session'
+      });
+    }
+
+    // Create new session
+    const result = await pool.query(`
+      INSERT INTO chat_sessions
+      (patient_id, doctor_id, chief_complaint, urgency, status)
+      VALUES ($1, $2, $3, 'MODERATE', 'active')
+      RETURNING *
+    `, [appointment.user_id, appointment.doctor_db_id, appointment.notes || `Appointment consultation on ${appointment.appointment_date}`]);
+
+    const session = result.rows[0];
+
+    res.json({
+      success: true,
+      session: {
+        id: session.id,
+        patientId: appointment.user_id,
+        patientName: appointment.patient_name,
+        doctorId: appointment.doctor_db_id,
+        doctorName: appointment.doctor_name,
+        chiefComplaint: session.chief_complaint,
+        urgency: session.urgency,
+        status: session.status,
+        createdAt: session.created_at,
+        lastMessageAt: session.last_message_at
+      }
+    });
+  } catch (error) {
+    console.error('Error creating chat session from appointment:', error);
+    res.status(500).json({ success: false, error: 'Failed to create chat session' });
+  }
+});
+
 // Get messages in a chat session
 app.get('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
   try {
@@ -609,27 +819,65 @@ app.get('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
 app.post('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
   const { message_text } = req.body;
   const sender_type = req.user.user_type === 'doctor' ? 'doctor' : 'patient';
+  const session_id = req.params.session_id;
 
   try {
+    // Validate message
+    if (!message_text || message_text.trim() === '') {
+      return res.status(400).json({ success: false, error: 'Message cannot be empty' });
+    }
+
+    // Check if session exists
+    const sessionCheck = await pool.query(
+      `SELECT id FROM chat_sessions WHERE id = $1`,
+      [session_id]
+    );
+
+    if (sessionCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Chat session not found' });
+    }
+
     // Insert the message
     const r = await pool.query(
-      `INSERT INTO direct_messages (session_id, sender_id, sender_type, message)
-       VALUES($1, $2, $3, $4) RETURNING
+      `INSERT INTO direct_messages (session_id, sender_id, sender_type, message, is_read)
+       VALUES($1, $2, $3, $4, FALSE) RETURNING
        id, session_id, sender_id, sender_type, message, is_read, created_at`,
-      [req.params.session_id, req.user.id, sender_type, message_text]
+      [session_id, req.user.id, sender_type, message_text.trim()]
     );
+
+    if (r.rows.length === 0) {
+      return res.status(500).json({ success: false, error: 'Failed to insert message' });
+    }
 
     // Update last_message_at in chat_sessions
-    await pool.query(
-      `UPDATE chat_sessions SET last_message_at = NOW() WHERE id = $1`,
-      [req.params.session_id]
-    );
+    try {
+      await pool.query(
+        `UPDATE chat_sessions SET last_message_at = NOW(), status = 'active' WHERE id = $1`,
+        [session_id]
+      );
+    } catch (updateErr) {
+      console.log('Note: Could not update chat_sessions timestamp:', updateErr.message);
+      // Continue anyway - message was still inserted
+    }
 
     // Get sender name for response
-    let senderName = req.user.name || '';
+    let senderName = 'Unknown';
     if (sender_type === 'doctor' && req.user.doctor_id) {
-      const doctorResult = await pool.query('SELECT name FROM doctors WHERE id=$1', [req.user.doctor_id]);
-      senderName = doctorResult.rows[0]?.name || 'Doctor';
+      try {
+        const doctorResult = await pool.query('SELECT name FROM doctors WHERE id=$1', [req.user.doctor_id]);
+        senderName = doctorResult.rows[0]?.name || 'Doctor';
+      } catch (nameErr) {
+        console.log('Could not fetch doctor name:', nameErr.message);
+        senderName = 'Doctor';
+      }
+    } else if (sender_type === 'patient') {
+      try {
+        const userResult = await pool.query('SELECT name FROM users WHERE id=$1', [req.user.id]);
+        senderName = userResult.rows[0]?.name || 'Patient';
+      } catch (nameErr) {
+        console.log('Could not fetch user name:', nameErr.message);
+        senderName = 'Patient';
+      }
     }
 
     const message = r.rows[0];
@@ -637,16 +885,17 @@ app.post('/api/chat-sessions/:session_id/messages', auth, async (req, res) => {
       success: true,
       message: {
         id: message.id,
-        session_id: message.session_id,
-        sender_id: message.sender_id,
-        sender_type: message.sender_type,
-        sender_name: senderName,
+        sessionId: message.session_id,
+        senderId: message.sender_id,
+        senderType: message.sender_type,
+        senderName: senderName,
         message: message.message,
         timestamp: message.created_at,
-        is_read: message.is_read
+        isRead: message.is_read
       }
     });
   } catch (e) {
+    console.error('Error sending message:', e);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -711,4 +960,3 @@ app.get('/api/escalations/pending', auth, async (req, res) => {
 // ── Start server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`\n🚀 MediConnectUG API running on port ${PORT}\n`));
-

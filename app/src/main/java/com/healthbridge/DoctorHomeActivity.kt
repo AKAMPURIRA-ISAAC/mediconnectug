@@ -111,8 +111,10 @@ class DoctorHomeActivity : AppCompatActivity() {
     private fun setupAppointments() {
         appointmentAdapter = AppointmentAdapter(
             onItemClick = { item ->
-                // Open patient info or chat
-                Toast.makeText(this, "Patient: ${item.doctorName}", Toast.LENGTH_SHORT).show()
+                // Open appointment details
+                val intent = Intent(this, DoctorAppointmentDetailActivity::class.java)
+                intent.putExtra("APPOINTMENT_ITEM", item)
+                startActivity(intent)
             },
             onReschedule = { _ ->
                 Toast.makeText(this, "Reschedule not available for doctors", Toast.LENGTH_SHORT).show()
@@ -153,7 +155,7 @@ class DoctorHomeActivity : AppCompatActivity() {
     private fun loadAppointments() {
         lifecycleScope.launch {
             try {
-                val response = ApiClient.instance.getAppointments()
+                val response = ApiClient.instance.getDoctorAppointments()
                 if (response.success && response.appointments != null) {
                     allAppointments = response.appointments.map { it.toAppointmentItem() }
                     filterAppointmentsByStatus(appointmentStatuses[tabAppointmentStatus.selectedTabPosition])
@@ -251,4 +253,3 @@ class DoctorHomeActivity : AppCompatActivity() {
         }
     }
 }
-

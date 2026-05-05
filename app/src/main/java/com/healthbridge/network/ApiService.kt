@@ -248,13 +248,14 @@ data class DirectMessage(
 )
 
 data class CreateChatSessionRequest(
-    @SerializedName("chief_complaint") val chiefComplaint: String,
-    @SerializedName("symptoms") val symptoms: String?,
-    @SerializedName("urgency") val urgency: String?  // "URGENT", "MODERATE", "MILD"
+    @SerializedName("doctor_id") val doctorId: Int? = null,
+    @SerializedName("chief_complaint") val chiefComplaint: String = "",
+    @SerializedName("symptoms") val symptoms: String? = null,
+    @SerializedName("urgency") val urgency: String? = null  // "URGENT", "MODERATE", "MILD"
 )
 
 data class SendMessageRequest(
-    @SerializedName("message") val message: String
+    @SerializedName("message_text") val message: String
 )
 
 data class ChatSessionResponse(
@@ -295,8 +296,11 @@ interface ApiService {
     suspend fun logout(): AuthResponse
 
     // Appointments
-    @GET("api/appointments")
-    suspend fun getAppointments(): AppointmentsResponse
+     @GET("api/appointments")
+     suspend fun getAppointments(): AppointmentsResponse
+
+     @GET("api/doctor/appointments")
+     suspend fun getDoctorAppointments(): AppointmentsResponse
 
     @POST("api/appointments")
     suspend fun bookAppointment(@Body request: BookingRequest): BookingResponse
@@ -306,6 +310,12 @@ interface ApiService {
 
     @DELETE("api/appointments/{id}")
     suspend fun cancelAppointment(@Path("id") id: Int): BookingResponse
+
+    @PUT("api/appointments/{id}/confirm")
+    suspend fun confirmAppointment(@Path("id") id: Int): BookingResponse
+
+    @PUT("api/appointments/{id}/reject")
+    suspend fun rejectAppointment(@Path("id") id: Int, @Body reason: Map<String, String>): BookingResponse
 
     // Profile
     @GET("api/profile")
@@ -366,6 +376,9 @@ interface ApiService {
 
     @PUT("api/chat-sessions/{session_id}/read")
     suspend fun markMessagesAsRead(@Path("session_id") sessionId: Int): MarkReadResponse
+
+    @POST("api/chat-sessions/from-appointment/{appointmentId}")
+    suspend fun createChatSessionFromAppointment(@Path("appointmentId") appointmentId: Int): ChatSessionResponse
 }
 
 // ── Singleton client with auth interceptor ─────────────────

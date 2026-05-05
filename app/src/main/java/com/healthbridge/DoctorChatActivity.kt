@@ -33,6 +33,7 @@ class DoctorChatActivity : AppCompatActivity() {
     private var sessionId: Int = -1
     private var myDoctorId: Int = -1
     private var pollingRunnable: Runnable? = null
+    private var isLoadingMessages = false  // ← Prevent duplicate requests
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,7 +74,8 @@ class DoctorChatActivity : AppCompatActivity() {
     }
 
     private fun loadMessages() {
-        if (sessionId == -1) return
+        if (sessionId == -1 || isLoadingMessages) return  // ← Skip if already loading
+        isLoadingMessages = true
         lifecycleScope.launch {
             try {
                 val response = ApiClient.instance.getChatSessionMessages(sessionId)
@@ -91,6 +93,8 @@ class DoctorChatActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 // Silently fail during polling
+            } finally {
+                isLoadingMessages = false  // ← Allow next request
             }
         }
     }
@@ -136,10 +140,10 @@ class DoctorChatActivity : AppCompatActivity() {
         pollingRunnable = object : Runnable {
             override fun run() {
                 loadMessages()
-                handler.postDelayed(this, 3000) // Poll every 3 seconds
+                handler.postDelayed(this, 5000) // Poll every 5 seconds (reduced from 3)
             }
         }
-        handler.postDelayed(pollingRunnable!!, 3000)
+        handler.postDelayed(pollingRunnable!!, 5000)
     }
 
     private fun stopPolling() {

@@ -9,6 +9,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.healthbridge.R
+import java.io.Serializable
 
 data class AppointmentItem(
     val id: String,
@@ -18,8 +19,10 @@ data class AppointmentItem(
     val time: String,
     val type: String,       // "in_person" | "video"
     val fee: Int,
-    val status: String = "upcoming"   // "upcoming" | "past" | "cancelled"
-)
+    val status: String = "upcoming",   // "upcoming" | "past" | "cancelled" | "pending"
+    val patientId: Int? = null,
+    val doctorId: Int? = null
+) : Serializable
 
 class AppointmentAdapter(
     private val items: MutableList<AppointmentItem> = mutableListOf(),
@@ -94,5 +97,3 @@ class AppointmentAdapter(
         }
     }
 }
-
-

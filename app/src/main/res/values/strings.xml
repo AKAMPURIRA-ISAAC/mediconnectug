@@ -157,4 +157,24 @@
     <string name="view_profile">View Profile</string>
     <string name="book_appointment_btn">Book Appointment</string>
 
+    <!-- Doctor Appointment Detail -->
+    <string name="appointment_details_title">Appointment Details</string>
+    <string name="patient_info_header">Patient Information</string>
+    <string name="label_type">Type</string>
+    <string name="label_status">Status</string>
+    <string name="label_date_time">Date &amp; Time</string>
+    <string name="label_consultation_fee">Consultation Fee</string>
+    <string name="label_actions">Actions</string>
+    <string name="btn_confirm">✓ Confirm</string>
+    <string name="btn_reject">✗ Reject</string>
+    <string name="btn_chat_patient">💬 Chat with Patient</string>
+    <string name="btn_call_patient">📞 Call Patient</string>
+    <string name="reject_appointment_dialog_title">Reject Appointment</string>
+    <string name="msg_reject_confirm">Are you sure you want to reject this appointment?</string>
+    <string name="toast_confirmed">✅ Appointment confirmed!</string>
+    <string name="toast_rejected">Appointment rejected</string>
+    <string name="toast_error_failed">Failed: %1$s</string>
+    <string name="date_at_time">%1$s at %2$s</string>
+    <string name="ugx_format">UGX %1$,d</string>
+
 </resources>

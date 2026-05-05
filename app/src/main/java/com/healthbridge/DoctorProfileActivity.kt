@@ -36,7 +36,8 @@ class DoctorProfileActivity : AppCompatActivity() {
         val name      = intent.getStringExtra("DOCTOR_NAME")      ?: getString(R.string.dr_sarah_johnson)
         val specialty = intent.getStringExtra("DOCTOR_SPECIALTY") ?: "Specialist"
         val phone     = intent.getStringExtra("DOCTOR_PHONE")     ?: ""
-        val doctorId  = intent.getStringExtra("DOCTOR_ID")        ?: "0"
+        val doctorIdString = intent.getStringExtra("DOCTOR_ID")   ?: "0"
+        val doctorId  = doctorIdString.toIntOrNull() ?: 0
         val fee       = intent.getIntExtra("DOCTOR_FEE", 50000)
         val clinic    = intent.getStringExtra("DOCTOR_CLINIC")    ?: "Kampala, Uganda"
 
@@ -67,7 +68,7 @@ class DoctorProfileActivity : AppCompatActivity() {
             val editIntent = Intent(this, EditDoctorProfileActivity::class.java).apply {
                 putExtra("DOCTOR_NAME",      name)
                 putExtra("DOCTOR_SPECIALTY", specialty)
-                putExtra("DOCTOR_ID",        doctorId)
+                putExtra("DOCTOR_ID",        doctorIdString)
                 putExtra("DOCTOR_FEE",       fee)
                 putExtra("DOCTOR_PHONE",     phone)
             }
@@ -88,10 +89,11 @@ class DoctorProfileActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    Log.d("DoctorProfile", "Creating chat session for doctor: $name")
+                    Log.d("DoctorProfile", "Creating chat session for doctor: $name (ID: $doctorId)")
 
                     val response = ApiClient.instance.createChatSession(
                         CreateChatSessionRequest(
+                            doctorId = if (doctorId > 0) doctorId else null,
                             chiefComplaint = "Direct consultation request",
                             symptoms = "Patient requested direct consultation with Dr. $name",
                             urgency = "MODERATE"
@@ -143,7 +145,7 @@ class DoctorProfileActivity : AppCompatActivity() {
                                 val bookIntent = Intent(this@DoctorProfileActivity, BookingActivity::class.java).apply {
                                     putExtra("DOCTOR_NAME", name)
                                     putExtra("DOCTOR_SPECIALTY", specialty)
-                                    putExtra("DOCTOR_ID", doctorId)
+                                    putExtra("DOCTOR_ID", doctorIdString)
                                     putExtra("DOCTOR_FEE", fee)
                                 }
                                 startActivity(bookIntent)
@@ -181,7 +183,7 @@ class DoctorProfileActivity : AppCompatActivity() {
             val bookIntent = Intent(this, BookingActivity::class.java).apply {
                 putExtra("DOCTOR_NAME",      name)
                 putExtra("DOCTOR_SPECIALTY", specialty)
-                putExtra("DOCTOR_ID",        doctorId)
+                putExtra("DOCTOR_ID",        doctorIdString)
                 putExtra("DOCTOR_FEE",       fee)
             }
             startActivity(bookIntent)

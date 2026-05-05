@@ -16,12 +16,15 @@ CREATE TABLE IF NOT EXISTS users (
 -- DOCTORS
 CREATE TABLE IF NOT EXISTS doctors (
   id                 SERIAL PRIMARY KEY,
+  user_id            INT REFERENCES users(id) ON DELETE CASCADE,
   name               VARCHAR(100) NOT NULL,
   specialty          VARCHAR(100) NOT NULL,
   rating             NUMERIC(3,1) DEFAULT 4.5,
   review_count       INT DEFAULT 0,
   consultation_fee   INT DEFAULT 50000,
   experience_years   INT DEFAULT 5,
+  hospital           VARCHAR(200),
+  license_number     VARCHAR(100),
   is_online          BOOLEAN DEFAULT FALSE,
   created_at         TIMESTAMPTZ DEFAULT NOW()
 );
