@@ -1,17 +1,22 @@
 ﻿package com.healthbridge
 
+import android.app.AlertDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayout
+import com.healthbridge.network.ApiClient
+import com.healthbridge.network.CreateChatSessionRequest
 import com.healthbridge.util.PermissionManager
+import kotlinx.coroutines.launch
 
 class DoctorProfileActivity : AppCompatActivity() {
 
@@ -78,11 +83,76 @@ class DoctorProfileActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btnMessage).setOnClickListener {
-            val chatIntent = Intent(this, ChatActivity::class.java).apply {
-                putExtra("DOCTOR_NAME", name)
-                putExtra("DOCTOR_ID",   doctorId)
+            // Create a direct chat session with this specific doctor
+            Toast.makeText(this, "Starting chat with $name...", Toast.LENGTH_SHORT).show()
+
+            lifecycleScope.launch {
+                try {
+                    Log.d("DoctorProfile", "Creating chat session for doctor: $name")
+
+                    val response = ApiClient.instance.createChatSession(
+                        CreateChatSessionRequest(
+                            chiefComplaint = "Direct consultation request",
+                            symptoms = "Patient requested direct consultation with Dr. $name",
+                            urgency = "MODERATE"
+                        )
+                    )
+
+                    Log.d("DoctorProfile", "API Response: success=${response.success}, session=${response.session?.id}")
+
+                    if (response.success && response.session != null) {
+                        val session = response.session
+                        Log.d("DoctorProfile", "Opening PatientChatActivity with session_id=${session.id}")
+
+                        // Open direct chat with this doctor
+                        val chatIntent = Intent(this@DoctorProfileActivity, PatientChatActivity::class.java).apply {
+                            putExtra("session_id", session.id)
+                            putExtra("doctor_name", name)
+                            putExtra("chief_complaint", "Direct consultation")
+                            putExtra("urgency_level", "MODERATE")
+                        }
+                        startActivity(chatIntent)
+
+                        Log.d("DoctorProfile", "PatientChatActivity started successfully")
+                    } else {
+                        Log.e("DoctorProfile", "Failed to create session: ${response.error}")
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@DoctorProfileActivity,
+                                "Could not start chat: ${response.error ?: "Unknown error"}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DoctorProfile", "Exception creating chat: ${e.message}", e)
+                    e.printStackTrace()
+
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@DoctorProfileActivity,
+                            "Network error: ${e.message}. Please check your connection.",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        // Alternative: Open booking as fallback
+                        AlertDialog.Builder(this@DoctorProfileActivity)
+                            .setTitle("Chat Unavailable")
+                            .setMessage("Unable to start chat. Would you like to book an appointment instead?")
+                            .setPositiveButton("Book Appointment") { _, _ ->
+                                val bookIntent = Intent(this@DoctorProfileActivity, BookingActivity::class.java).apply {
+                                    putExtra("DOCTOR_NAME", name)
+                                    putExtra("DOCTOR_SPECIALTY", specialty)
+                                    putExtra("DOCTOR_ID", doctorId)
+                                    putExtra("DOCTOR_FEE", fee)
+                                }
+                                startActivity(bookIntent)
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                }
             }
-            startActivity(chatIntent)
         }
 
         findViewById<View>(R.id.btnDirection).setOnClickListener {

@@ -402,9 +402,9 @@ object ApiClient {
                 chain.proceed(req)
             }
             .addInterceptor(logging)
-            .connectTimeout(30, TimeUnit.SECONDS)   // Render cold start can take ~15s
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)   // Extended for better reliability
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)          // auto-retry once on transient failures
             .build()
 

@@ -138,7 +138,7 @@ app.post('/api/auth/login', async (req, res) => {
       email: user.email,
       user_type: user.user_type || 'patient',
       doctor_id: doctorId
-    }, JWT_SECRET, { expiresIn: '30d' });
+    }, JWT_SECRET, { expiresIn: '180d' });
 
     res.json({
       success: true,

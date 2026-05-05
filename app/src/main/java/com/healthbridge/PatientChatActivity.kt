@@ -19,19 +19,23 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class DoctorChatActivity : AppCompatActivity() {
+/**
+ * PatientChatActivity - Patient's view of their chat with a doctor
+ * Similar to DoctorChatActivity but from the patient perspective
+ */
+class PatientChatActivity : AppCompatActivity() {
 
     private lateinit var rvMessages: RecyclerView
     private lateinit var etMessage: EditText
     private lateinit var btnSend: ImageView
-    private lateinit var tvPatientName: TextView
+    private lateinit var tvDoctorName: TextView
     private lateinit var tvChiefComplaint: TextView
 
     private val messages = mutableListOf<DirectMessage>()
-    private lateinit var adapter: DoctorMessageAdapter
+    private lateinit var adapter: PatientMessageAdapter
     private val handler = Handler(Looper.getMainLooper())
     private var sessionId: Int = -1
-    private var myDoctorId: Int = -1
+    private var myPatientId: Int = -1
     private var pollingRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,24 +43,24 @@ class DoctorChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_doctor_chat)
 
         sessionId = intent.getIntExtra("session_id", -1)
-        val patientName = intent.getStringExtra("patient_name") ?: "Patient"
+        val doctorName = intent.getStringExtra("doctor_name") ?: "Doctor"
         val chiefComplaint = intent.getStringExtra("chief_complaint") ?: "General consultation"
         val urgencyLevel = intent.getStringExtra("urgency_level") ?: "normal"
 
-        tvPatientName = findViewById(R.id.tvPatientName)
+        tvDoctorName = findViewById(R.id.tvPatientName)
         tvChiefComplaint = findViewById(R.id.tvChiefComplaint)
         rvMessages = findViewById(R.id.rvMessages)
         etMessage = findViewById(R.id.etMessage)
         btnSend = findViewById(R.id.btnSend)
 
-        tvPatientName.text = patientName
+        tvDoctorName.text = "Dr. $doctorName"
         tvChiefComplaint.text = "📋 $chiefComplaint ${getUrgencyIcon(urgencyLevel)}"
 
         findViewById<ImageView>(R.id.btnBack).setOnClickListener { finish() }
 
-        // Get doctor ID from prefs (stored during login)
+        // Get patient ID from prefs (stored during login)
         val prefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
-        myDoctorId = prefs.getInt("userId", -1)
+        myPatientId = prefs.getInt("userId", -1)
 
         setupRecyclerView()
         loadMessages()
@@ -67,7 +71,7 @@ class DoctorChatActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = DoctorMessageAdapter(messages, myDoctorId)
+        adapter = PatientMessageAdapter(messages, myPatientId)
         rvMessages.layoutManager = LinearLayoutManager(this)
         rvMessages.adapter = adapter
     }
@@ -82,7 +86,7 @@ class DoctorChatActivity : AppCompatActivity() {
                     messages.clear()
                     messages.addAll(response.messages)
                     adapter.notifyDataSetChanged()
-
+                    
                     // Only scroll if new messages
                     if (messages.size > oldSize) {
                         scrollToBottom()
@@ -113,7 +117,7 @@ class DoctorChatActivity : AppCompatActivity() {
                     scrollToBottom()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@DoctorChatActivity, "Failed to send message", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@PatientChatActivity, "Failed to send message", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -156,7 +160,7 @@ class DoctorChatActivity : AppCompatActivity() {
         stopPolling()
     }
 
-    private fun getUrgencyIcon(urgency: String): String = when (urgency) {
+    private fun getUrgencyIcon(urgency: String): String = when (urgency.lowercase()) {
         "emergency" -> "🔴"
         "urgent" -> "🟠"
         "moderate" -> "🟡"
@@ -164,11 +168,11 @@ class DoctorChatActivity : AppCompatActivity() {
     }
 }
 
-// ── Message Adapter for Doctor Chat ──────────────────────────────────────────
-class DoctorMessageAdapter(
+// ── Message Adapter for Patient Chat ──────────────────────────────────────────
+class PatientMessageAdapter(
     private val messages: List<DirectMessage>,
-    private val myDoctorId: Int
-) : RecyclerView.Adapter<DoctorMessageAdapter.ViewHolder>() {
+    private val myPatientId: Int
+) : RecyclerView.Adapter<PatientMessageAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -185,7 +189,7 @@ class DoctorMessageAdapter(
         private val container: LinearLayout = itemView.findViewById(R.id.layoutMessage)
 
         fun bind(msg: DirectMessage) {
-            val isSent = msg.senderType == "doctor" && msg.senderId == myDoctorId
+            val isSent = msg.senderType == "patient" && msg.senderId == myPatientId
             tvMessage.text = msg.message
             tvTime.text = SimpleDateFormat("hh:mm a", Locale.getDefault())
                 .format(Date(msg.timestamp.toLongOrNull() ?: System.currentTimeMillis()))

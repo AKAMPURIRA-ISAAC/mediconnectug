@@ -62,6 +62,7 @@
         <activity android:name=".HomeActivity" android:exported="false" />
         <activity android:name=".DoctorHomeActivity" android:exported="false" />
         <activity android:name=".DoctorChatActivity" android:exported="false" />
+        <activity android:name=".PatientChatActivity" android:exported="false" />
         <activity android:name=".FindDoctorsActivity" android:exported="false" />
         <activity android:name=".MyAppointmentsActivity" android:exported="false" />
         <activity android:name=".EmergencyActivity" android:exported="false" />

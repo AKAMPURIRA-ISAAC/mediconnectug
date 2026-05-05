@@ -15,7 +15,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.healthbridge.data.repository.RepositoryFactory
+import com.healthbridge.network.ApiClient
 import com.healthbridge.network.ChatRequest
+import com.healthbridge.network.CreateChatSessionRequest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -248,16 +250,33 @@ class ChatActivity : AppCompatActivity() {
     // ── Core message router with state awareness ─────────────────────────────
 
     private fun processUserMessage(text: String) {
+        // ── Handle contextual follow-ups intelligently ──
+        if (containsFollowUp(text)) {
+            respondToFollowUp(text)
+            return
+        }
+
         // ── State-driven follow-up collection ──
         when (conversationState) {
             ConversationState.AWAITING_DURATION -> {
                 ctx.durationText = extractDuration(text) ?: text.take(40)
-                conversationState = ConversationState.AWAITING_SEVERITY
-                addBotMessage(
-                    "Got it — **${ctx.durationText}**. 📝\n\n" +
-                    "On a scale of **1 to 10**, how severe would you rate the discomfort?\n" +
-                    "_(1 = very mild, 10 = unbearable)_"
-                )
+
+                // Smart decision: skip severity if symptoms are clearly mild
+                if (shouldSkipSeverityCheck(ctx.symptoms)) {
+                    conversationState = ConversationState.TRIAGING
+                    addBotMessage(
+                        "Got it — **${ctx.durationText}**. 📝\n\n" +
+                        "Based on what you've described, let me provide some guidance..."
+                    )
+                    handler.postDelayed({ deliverTriage() }, 1000)
+                } else {
+                    conversationState = ConversationState.AWAITING_SEVERITY
+                    addBotMessage(
+                        "Thanks — **${ctx.durationText}**. 📝\n\n" +
+                        "On a scale of **1 to 10**, how would you rate the discomfort?\n" +
+                        "_(1 = very mild, 10 = unbearable)_"
+                    )
+                }
                 return
             }
             ConversationState.AWAITING_SEVERITY -> {
@@ -308,6 +327,123 @@ class ChatActivity : AppCompatActivity() {
             containsAnotherTip(text)               -> respondWithHealthTip()
             else                                   -> respondIntelligently(text)
         }
+    }
+
+    // ── Smart follow-up detection ──
+    private fun containsFollowUp(t: String) =
+        listOf("tell me more","more about","explain","elaborate","what else",
+            "anything else","continue","go on","and then","what about","how about",
+            "what if","is that","really","why","how does","what causes").any { t.contains(it) }
+
+    private fun shouldSkipSeverityCheck(symptoms: List<String>): Boolean {
+        // Skip severity for informational queries
+        val mildSymptoms = listOf("runny nose","mild headache","slight cough","tired")
+        return symptoms.any { s -> mildSymptoms.any { mild -> s.contains(mild) } }
+    }
+
+    private fun respondToFollowUp(text: String) {
+        val lastTopic = ctx.currentTopic ?: "general health"
+
+        when {
+            text.contains("tell me more") || text.contains("more about") -> {
+                addBotMessage(
+                    "Of course! Let me elaborate on **$lastTopic**...\n\n" +
+                    provideDetailedInfo(lastTopic)
+                )
+            }
+            text.contains("why") || text.contains("how does") -> {
+                addBotMessage(provideExplanation(lastTopic))
+            }
+            text.contains("what if") || text.contains("is that serious") -> {
+                addBotMessage(provideRiskAssessment(lastTopic))
+            }
+            else -> {
+                addBotMessage(
+                    "That's a good question! Based on what we've discussed about **$lastTopic**, " +
+                    "here's what you should know:\n\n${provideContextualAnswer(text, lastTopic)}"
+                )
+            }
+        }
+    }
+
+    private fun provideDetailedInfo(topic: String): String {
+        return when {
+            topic.contains("fever") -> """
+                **Understanding Fever:**
+                
+                🌡️ **What is it:** Your body's temperature rises above 37.5°C (99.5°F) as a defense mechanism against infection.
+                
+                **Common Causes:**
+                • Viral infections (flu, cold, COVID-19)
+                • Bacterial infections (strep throat, UTI)
+                • Heat exhaustion or dehydration
+                • Inflammatory conditions
+                
+                **When to Worry:**
+                • Fever above 39.5°C (103°F)
+                • Lasts more than 3 days
+                • Accompanied by stiff neck, confusion, or rash
+                • In infants under 3 months old
+                
+                **Home Care:**
+                • Take paracetamol or ibuprofen as directed
+                • Stay hydrated (water, ORS, clear soups)
+                • Rest in a cool, comfortable environment
+                • Use lukewarm sponge baths (not cold!)
+            """.trimIndent()
+
+            topic.contains("headache") -> """
+                **Understanding Headaches:**
+                
+                🤕 **Types:**
+                • Tension headaches (most common) - feels like a tight band
+                • Migraines - throbbing pain, often one-sided
+                • Cluster headaches - severe pain around one eye
+                • Sinus headaches - pressure in face/forehead
+                
+                **Triggers to Avoid:**
+                • Dehydration (drink 8 glasses water daily!)
+                • Skipping meals or low blood sugar
+                • Poor sleep or irregular sleep schedule
+                • Screen time without breaks
+                • Stress and muscle tension
+                • Certain foods (cheese, chocolate, MSG)
+                
+                **Relief Methods:**
+                • Apply cold/warm compress to head
+                • Massage temples and neck muscles
+                • Rest in quiet, dark room
+                • Pain reliever (paracetamol/ibuprofen)
+                • Deep breathing exercises
+                
+                ⚠️ **Red Flags:** Sudden severe "thunderclap" headache, headache with fever/stiff neck, or headache after head injury = Emergency!
+            """.trimIndent()
+
+            else -> "I'd be happy to provide more details! Could you be more specific about what aspect of $topic you'd like to know more about?"
+        }
+    }
+
+    private fun provideExplanation(topic: String): String {
+        return when {
+            topic.contains("fever") -> "Your body raises its temperature to create an unfavorable environment for viruses and bacteria. Fever actually shows your immune system is working properly!"
+            topic.contains("cough") -> "Coughing is your body's protective reflex to clear airways of mucus, irritants, or foreign particles. It's usually helpful, though it can be uncomfortable."
+            topic.contains("pain") -> "Pain is your body's alarm system, signaling that something needs attention. It's caused by nerve endings detecting tissue damage or inflammation."
+            else -> "That's influenced by multiple factors including your immune system, lifestyle, and environmental conditions. Would you like specific details?"
+        }
+    }
+
+    private fun provideRiskAssessment(topic: String): String {
+        return when {
+            topic.contains("fever") -> "Most fevers resolve in 2-3 days and aren't serious. However, very high fever (>39.5°C), persistent fever (>3 days), or fever with other severe symptoms requires medical evaluation."
+            topic.contains("cough") -> "A cough lasting less than 3 weeks is usually not serious. But if it persists beyond 3 weeks, produces blood, or comes with weight loss/night sweats, see a doctor to rule out TB or other conditions."
+            else -> "The severity depends on multiple factors including duration, intensity, and associated symptoms. When in doubt, it's always best to consult a healthcare professional."
+        }
+    }
+
+    private fun provideContextualAnswer(question: String, topic: String): String {
+        return "Based on your question about **$topic**, here's what's important: " +
+            "Monitor your symptoms closely, follow the care advice I provided, and don't hesitate to seek medical help if things worsen. " +
+            "Would you like me to connect you with a doctor for a professional opinion?"
     }
 
     // ── Keyword detectors ─────────────────────────────────────────────────────
@@ -1430,8 +1566,49 @@ class ChatActivity : AppCompatActivity() {
                 conversationState = ConversationState.AWAITING_SEVERITY
                 addBotMessage(
                     "Thank you for sharing. 📝\n\n" +
-                    "On a scale of **1 to 10**, how severe are your symptoms right now?\n" +
-                    "_(1 = barely noticeable, 10 = extremely painful or disabling)_"
+                    "On a scale of **1 to 10**, how would you rate your discomfort?\n" +
+                    "_(1 = barely noticeable, 10 = extremely severe)_"
+                )
+                return
+            }
+        }
+
+        // ── Intelligent context-aware response ──
+        // Check conversation history for patterns
+        val recentContext = recentUserInputs.toList().takeLast(3).joinToString(" ")
+
+        // Predict user intent from conversation flow
+        when {
+            recentContext.contains("pain") || recentContext.contains("hurt") -> {
+                addBotMessage(
+                    "I understand you're experiencing discomfort. 💭\n\n" +
+                    "To give you the best guidance, could you tell me:\n" +
+                    "• Where exactly is the pain located?\n" +
+                    "• When did it start?\n" +
+                    "• Is it constant or comes and goes?\n\n" +
+                    "Or if it's urgent, I can connect you with a doctor right away."
+                )
+                return
+            }
+            recentContext.contains("feel") && (text.contains("bad") || text.contains("not well") || text.contains("unwell")) -> {
+                addBotMessage(
+                    "I'm sorry you're not feeling well. 💚\n\n" +
+                    "Let's figure out what's going on. Could you describe:\n" +
+                    "• Your main symptoms (fever, headache, nausea, etc.)\n" +
+                    "• How long you've been feeling this way\n\n" +
+                    "I'll provide guidance and can connect you with a doctor if needed."
+                )
+                return
+            }
+            text.contains("not sure") || text.contains("don't know") || text.contains("maybe") -> {
+                addBotMessage(
+                    "No worries — let's work through this together! 🤝\n\n" +
+                    "You can:\n" +
+                    "• Describe any physical symptoms you have\n" +
+                    "• Ask about a specific health condition\n" +
+                    "• Request a health tip\n" +
+                    "• Book an appointment with a doctor\n\n" +
+                    "What would be most helpful for you right now?"
                 )
                 return
             }
@@ -1439,15 +1616,19 @@ class ChatActivity : AppCompatActivity() {
 
         // Try to detect a health topic from vague input
         val topicHints = mapOf(
-            listOf("heart","cardiac","chest","palpitation") to { respondToBloodPressure() },
-            listOf("stomach","abdomen","belly","gut","bowel") to { startSymptomCollection("stomach pain diarrhoea nausea") },
-            listOf("head","migraine","brain") to { startSymptomCollection("headache") },
-            listOf("skin","colour","rash") to { respondToSkin() },
-            listOf("eye","see","vision","sight") to { respondToEye() },
-            listOf("tooth","teeth","mouth","jaw","gum") to { respondToDental() },
-            listOf("baby","child","son","daughter","infant") to { respondToChildHealth() },
-            listOf("pregnant","baby coming","expecting") to { respondToMaternal() }
+            listOf("heart","cardiac","chest","palpitation","beats") to { respondToBloodPressure() },
+            listOf("stomach","abdomen","belly","gut","bowel","tummy") to { startSymptomCollection("stomach pain diarrhoea nausea") },
+            listOf("head","migraine","brain","skull") to { startSymptomCollection("headache") },
+            listOf("skin","colour","rash","itchy","scratch") to { respondToSkin() },
+            listOf("eye","see","vision","sight","blurry") to { respondToEye() },
+            listOf("tooth","teeth","mouth","jaw","gum","dental") to { respondToDental() },
+            listOf("baby","child","son","daughter","infant","kid") to { respondToChildHealth() },
+            listOf("pregnant","baby coming","expecting","trimester") to { respondToMaternal() },
+            listOf("breath","lungs","asthma","wheez") to { respondToRespiratory() },
+            listOf("stress","worried","anxious","depress","sad","overwhelm") to { respondToMentalHealth() },
+            listOf("eat","food","diet","weight","hungry","nutrition") to { respondToNutrition() }
         )
+
         for ((keywords, action) in topicHints) {
             if (keywords.any { text.contains(it) }) {
                 action()
@@ -1455,16 +1636,53 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        // Generic intelligent fallback
-        addBotMessage(
-            "I want to make sure I give you the most helpful response! 🤔\n\n" +
-            "Could you try describing your concern differently? For example:\n\n" +
-            "• _\"I've had a fever and headache for 3 days\"_\n" +
-            "• _\"I need information about diabetes\"_\n" +
-            "• _\"I want to book a doctor\"_\n" +
-            "• _\"Give me a health tip\"_\n\n" +
-            "Or tap one of the quick buttons below to get started! 👇"
-        )
+        // ── Context-aware predictive response based on patterns ──
+        val response = when {
+            text.contains("help") || text.contains("assist") -> {
+                "I'm here to help! 🩺\n\n" +
+                "I can assist you with:\n" +
+                "• Symptom analysis & health guidance\n" +
+                "• Connecting you with online doctors\n" +
+                "• Health tips & wellness advice\n" +
+                "• Medication information\n" +
+                "• Emergency guidance\n\n" +
+                "What specific help do you need today?"
+            }
+            text.contains("problem") || text.contains("issue") || text.contains("concern") -> {
+                "I'm listening. 👂\n\n" +
+                "Please describe your concern in detail — the more information you share, the better I can help you. " +
+                "You can describe symptoms, ask questions, or request to speak with a doctor."
+            }
+            text.contains("sick") || text.contains("ill") || text.contains("unwell") -> {
+                "I'm sorry you're feeling unwell. 💚\n\n" +
+                "Let's get to the bottom of this. Please share:\n" +
+                "• Your symptoms\n" +
+                "• When they started\n" +
+                "• Anything that makes them better or worse\n\n" +
+                "I'll provide guidance and connect you with a doctor if needed."
+            }
+            recentUserInputs.size >= 3 -> {
+                // User has been chatting but no clear intent — offer proactive help
+                "I want to make sure I'm helping you effectively! 🎯\n\n" +
+                "Based on our conversation, would you like me to:\n" +
+                "• Analyze specific symptoms you're experiencing?\n" +
+                "• Connect you with a doctor for professional advice?\n" +
+                "• Provide health tips for staying well?\n" +
+                "• Answer questions about a health condition?\n\n" +
+                "Just let me know what would be most useful!"
+            }
+            else -> {
+                "I want to give you the best possible help! 🤔\n\n" +
+                "Could you rephrase that or try:\n\n" +
+                "• Describing your symptoms: _\"I have fever and headache\"_\n" +
+                "• Asking about a condition: _\"Tell me about malaria\"_\n" +
+                "• Requesting help: _\"I want to see a doctor\"_\n" +
+                "• Getting tips: _\"Give me a health tip\"_\n\n" +
+                "Or use the quick buttons below! 👇"
+            }
+        }
+
+        addBotMessage(response)
     }
 
     private fun offerDoctorConnection() {
@@ -1574,25 +1792,40 @@ class ChatActivity : AppCompatActivity() {
                 }
                 
                 // API call to create chat session
-                // val sessionResponse = ApiClient.instance.createChatSession(...)
-                // For now, navigate to FindDoctors with params
-                
-                removeTypingIndicator()
-                addBotMessage(
-                    "✅ **Chat session created!**\n\n" +
-                    "Dr. $doctorName has been notified and will respond shortly.\n\n" +
-                    "Opening your chat now..."
+                val sessionResponse = ApiClient.instance.createChatSession(
+                    CreateChatSessionRequest(
+                        chiefComplaint = chiefComplaint,
+                        symptoms = assessment,
+                        urgency = urgency.uppercase()
+                    )
                 )
-                
-                handler.postDelayed({
-                    // TODO: Navigate to DoctorChatActivity when implemented
-                    // For now, show success and open FindDoctors
-                    Toast.makeText(this@ChatActivity, 
-                        "Doctor chat feature launching... Opening doctor list", 
-                        Toast.LENGTH_LONG).show()
-                    startActivity(Intent(this@ChatActivity, FindDoctorsActivity::class.java))
-                }, 1500)
-                
+
+                removeTypingIndicator()
+
+                if (sessionResponse.success && sessionResponse.session != null) {
+                    val session = sessionResponse.session
+                    addBotMessage(
+                        "✅ **Chat session created!**\n\n" +
+                        "Dr. $doctorName has been notified and will respond shortly.\n\n" +
+                        "Opening your chat now..."
+                    )
+
+                    handler.postDelayed({
+                        // Navigate to patient's chat view with doctor
+                        val intent = Intent(this@ChatActivity, PatientChatActivity::class.java)
+                        intent.putExtra("session_id", session.id)
+                        intent.putExtra("doctor_name", session.doctorName ?: "Doctor")
+                        intent.putExtra("chief_complaint", session.chiefComplaint)
+                        intent.putExtra("urgency_level", session.urgency)
+                        startActivity(intent)
+                    }, 1500)
+                } else {
+                    addBotMessage(
+                        "⚠️ Could not create chat session.\n\n" +
+                        "Please try browsing doctors manually."
+                    )
+                }
+
             } catch (e: Exception) {
                 removeTypingIndicator()
                 addBotMessage(

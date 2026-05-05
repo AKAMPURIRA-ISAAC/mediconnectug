@@ -49,6 +49,15 @@
         </LinearLayout>
 
         <ImageView
+            android:id="@+id/btnAppointments"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_schedule"
+            android:tint="@color/white"
+            android:contentDescription="My Appointments" />
+
+        <ImageView
             android:id="@+id/btnLogout"
             android:layout_width="32dp"
             android:layout_height="32dp"
@@ -57,23 +66,121 @@
             android:contentDescription="Logout" />
     </LinearLayout>
 
-    <TextView
+    <!-- Tabs for Chats and Appointments -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/gray_light"
-        android:padding="12dp"
-        android:text="📋 Active Patient Chats"
-        android:textColor="@color/on_surface"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:background="@color/white"
+        app:tabIndicatorColor="@color/primary"
+        app:tabSelectedTextColor="@color/primary"
+        app:tabTextColor="@color/gray_medium">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvChatSessions"
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💬 Chats" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📅 Appointments" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- Content Area -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:padding="8dp" />
+        android:layout_weight="1">
+
+        <!-- Chats Tab Content -->
+        <LinearLayout
+            android:id="@+id/layoutChatsTab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvChatSessions"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="8dp" />
+        </LinearLayout>
+
+        <!-- Appointments Tab Content -->
+        <LinearLayout
+            android:id="@+id/layoutAppointmentsTab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabAppointmentStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                app:tabIndicatorColor="@color/primary"
+                app:tabSelectedTextColor="@color/primary"
+                app:tabTextColor="@color/gray_medium"
+                app:tabMode="scrollable">
+
+                <com.google.android.material.tabs.TabItem
+                    android:text="Upcoming" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:text="Past" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:text="Cancelled" />
+            </com.google.android.material.tabs.TabLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAppointments"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:padding="8dp" />
+
+            <LinearLayout
+                android:id="@+id/emptyAppointments"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/ic_schedule"
+                    android:tint="@color/gray_medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="No appointments"
+                    android:textColor="@color/on_surface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="You have no appointments scheduled"
+                    android:textColor="@color/gray_medium"
+                    android:textSize="14sp"
+                    android:gravity="center" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>
 
