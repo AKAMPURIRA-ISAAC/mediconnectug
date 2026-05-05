@@ -14,7 +14,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
         setContentView(R.layout.activity_forgot_password)
         
         val etEmail = findViewById<EditText>(R.id.etEmail)
-        val btnSend = findViewById<Button>(R.id.btnSend)
+        val btnSend = findViewById<Button>(R.id.btnReset)
         val tvBackToLogin = findViewById<TextView>(R.id.tvBackToLogin)
         
         btnSend.setOnClickListener {

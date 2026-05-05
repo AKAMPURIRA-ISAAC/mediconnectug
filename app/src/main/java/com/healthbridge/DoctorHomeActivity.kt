@@ -63,7 +63,7 @@ class DoctorHomeActivity : BaseActivity() {
         tvDoctorName.text = "Dr. $doctorName"
         tvOnlineStatus.text = "🟢 Online"
 
-        findViewById<ImageView>(R.id.btnLogout).setOnClickListener {
+        findViewById<ImageView>(R.id.imgLogout).setOnClickListener {
             showLogoutDialog()
         }
 

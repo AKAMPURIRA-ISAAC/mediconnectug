@@ -2,9 +2,15 @@ package com.healthbridge.util
 
 import android.app.Activity
 import android.app.DownloadManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -94,48 +100,16 @@ object UpdateChecker {
             if (isNewerVersion(latestVersion, currentVersion)) {
                 withContext(Dispatchers.Main) {
                     if (!activity.isFinishing && !activity.isDestroyed) {
-                        showUpdateDialog(activity, latestName.ifBlank { latestTag }, latestVersion, releaseNotes, apkUrl)
+                        // Automatically start download without user confirmation
+                        startDownload(activity, apkUrl)
+                        // Show notification that update is downloading
+                        showDownloadNotification(activity, latestVersion)
                     }
                 }
             }
         } catch (_: Exception) {
             // Silently ignore all errors — never crash the app over an update check
         }
-    }
-
-    private fun showUpdateDialog(
-        activity: Activity,
-        releaseName: String,
-        latestVersion: String,
-        releaseNotes: String,
-        apkUrl: String
-    ) {
-        val currentVersion = try {
-            activity.packageManager.getPackageInfo(activity.packageName, 0).versionName
-                .replace("-debug", "")
-        } catch (_: Exception) { "?" }
-
-        val message = buildString {
-            append("🆕 $releaseName is available!\n\n")
-            append("Current: v$currentVersion  →  Latest: v$latestVersion\n\n")
-            if (releaseNotes.isNotBlank()) {
-                append("What's new:\n$releaseNotes\n\n")
-            }
-            append("The update will download in the background. You'll be prompted to install when ready.")
-        }
-
-        AlertDialog.Builder(activity)
-            .setTitle("Update Available 🚀")
-            .setMessage(message)
-            .setCancelable(false)
-            .setPositiveButton("⬇️ Download Now") { _, _ ->
-                startDownload(activity, apkUrl)
-            }
-            .setNegativeButton("Later") { _, _ ->
-                // User dismissed dialog - already tracked in PREF_LAST_NOTIFIED_VERSION
-                // Won't show again for this version until they update
-            }
-            .show()
     }
 
     private fun startDownload(activity: Activity, apkUrl: String) {
@@ -149,6 +123,36 @@ object UpdateChecker {
             setAllowedOverRoaming(true)
         }
         downloadId = downloadManager.enqueue(request)
+    }
+
+    private fun showDownloadNotification(activity: Activity, latestVersion: String) {
+        val notificationManager = activity.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "update_download"
+        val channelName = "Update Download"
+        val notificationId = 1
+
+        // Create notification channel for Android O and above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        // PendingIntent to open the app when the notification is tapped
+        val pendingIntent = PendingIntent.getActivity(
+            activity, 0, Intent(activity, activity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Build and show the notification
+        val notification = NotificationCompat.Builder(activity, channelId)
+            .setContentTitle("HealthBridge Update")
+            .setContentText("Update to version $latestVersion is downloading...")
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
+
+        notificationManager.notify(notificationId, notification)
     }
 
     /**
