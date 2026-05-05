@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,12 +17,13 @@ import com.healthbridge.network.SendMessageRequest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.healthbridge.util.SessionManager
 
 /**
  * PatientChatActivity - Patient's view of their chat with a doctor
  * Similar to DoctorChatActivity but from the patient perspective
  */
-class PatientChatActivity : AppCompatActivity() {
+class PatientChatActivity : BaseActivity() {
 
     private lateinit var rvMessages: RecyclerView
     private lateinit var etMessage: EditText
@@ -167,10 +167,10 @@ class PatientChatActivity : AppCompatActivity() {
         pollingRunnable = object : Runnable {
             override fun run() {
                 loadMessages()
-                handler.postDelayed(this, 5000) // Poll every 5 seconds (reduced from 3)
+                handler.postDelayed(this, 10000) // Poll every 10 seconds (reduced from 5 for better performance)
             }
         }
-        handler.postDelayed(pollingRunnable!!, 5000)
+        handler.postDelayed(pollingRunnable!!, 10000)
     }
 
     private fun stopPolling() {

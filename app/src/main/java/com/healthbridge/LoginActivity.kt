@@ -13,16 +13,36 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.healthbridge.network.ApiClient
 import com.healthbridge.network.LoginRequest
+import com.healthbridge.util.SessionManager
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private var passwordVisible = false
     private var isDoctorLogin = false
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        sessionManager = SessionManager(this)
+
+        // Check if redirected due to session timeout
+        val sessionTimedOut = intent.getBooleanExtra("session_timeout", false)
+        if (sessionTimedOut) {
+            Toast.makeText(
+                this,
+                "⏱️ Your session has expired (15 minutes of inactivity). Please login again.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        // Check if user is already logged in with valid session
+        if (sessionManager.isLoggedIn() && sessionManager.isSessionValid()) {
+            navigateToHome()
+            return
+        }
 
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
@@ -30,7 +50,6 @@ class LoginActivity : AppCompatActivity() {
         val tvRegister = findViewById<TextView>(R.id.tvRegister)
         val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
         val tvTogglePassword = findViewById<TextView>(R.id.tvTogglePassword)
-        val btnFacebook = findViewById<LinearLayout>(R.id.btnFacebook)
         
         // Add toggle for doctor/patient login
         val tvToggleUserType = TextView(this).apply {
@@ -57,10 +76,6 @@ class LoginActivity : AppCompatActivity() {
                 tvTogglePassword.text = "👁"
             }
             etPassword.setSelection(etPassword.text.length)
-        }
-
-        btnFacebook.setOnClickListener {
-            Toast.makeText(this, "Facebook login coming soon", Toast.LENGTH_SHORT).show()
         }
 
         tvForgotPassword.setOnClickListener {
@@ -95,7 +110,14 @@ class LoginActivity : AppCompatActivity() {
                 val userType = if (isDoctorLogin) "doctor" else "patient"
                 val response = ApiClient.instance.login(LoginRequest(email, password, userType))
                 if (response.success) {
-                    saveUserAndNavigate(email, response.user?.name, response.token, response.user?.userType)
+                    saveUserAndNavigate(
+                        email,
+                        response.user?.name,
+                        response.token,
+                        response.user?.userType,
+                        response.user?.id,
+                        response.user?.doctorId
+                    )
                 } else {
                     Toast.makeText(
                         this@LoginActivity,
@@ -122,10 +144,13 @@ class LoginActivity : AppCompatActivity() {
                 saveUserAndNavigate(email, savedName)
             }
             savedEmail == null -> {
-                // No registration on record — accept any credentials (demo / first run)
-                val name = email.substringBefore('@')
-                    .replaceFirstChar { it.uppercase() }
-                saveUserAndNavigate(email, name)
+                // No registration on record — MUST register first
+                Toast.makeText(
+                    this,
+                    "❌ You must register first. Registration is required to use this app.",
+                    Toast.LENGTH_LONG
+                ).show()
+                resetButton(btnLogin)
             }
             else -> {
                 Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
@@ -134,7 +159,25 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveUserAndNavigate(email: String, name: String?, token: String? = null, userType: String? = "patient") {
+    private fun saveUserAndNavigate(
+        email: String,
+        name: String?,
+        token: String? = null,
+        userType: String? = "patient",
+        userId: Int? = null,
+        doctorId: Int? = null
+    ) {
+        // Save to SessionManager (handles all session-related storage)
+        sessionManager.saveUser(
+            email = email,
+            name = name ?: email.substringBefore('@'),
+            token = token ?: getSharedPreferences("HealthBridge", MODE_PRIVATE).getString("auth_token", "") ?: "",
+            userType = userType ?: "patient",
+            userId = userId ?: -1,
+            doctorId = doctorId
+        )
+
+        // Also save to SharedPreferences for backward compatibility
         val prefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
         prefs.edit().apply {
             putBoolean("isLoggedIn", true)
@@ -143,13 +186,7 @@ class LoginActivity : AppCompatActivity() {
             if (!name.isNullOrBlank()) putString("userName", name)
             if (!token.isNullOrBlank()) {
                 putString("auth_token", token)
-                ApiClient.authToken = token   // set in-memory for this session
-            } else {
-                // Fallback / offline login — always restore any previously saved token
-                val existing = prefs.getString("auth_token", null)
-                if (!existing.isNullOrBlank()) {
-                    ApiClient.authToken = existing
-                }
+                ApiClient.authToken = token
             }
             apply()
         }
@@ -157,7 +194,11 @@ class LoginActivity : AppCompatActivity() {
         val successMessage = if (userType == "doctor") "Doctor Login Successful" else "Login Successful"
         Toast.makeText(this, successMessage, Toast.LENGTH_SHORT).show()
         
-        // Navigate to appropriate home screen
+        navigateToHome()
+    }
+
+    private fun navigateToHome() {
+        val userType = sessionManager.getUserType()
         val targetActivity = if (userType == "doctor") DoctorHomeActivity::class.java else HomeActivity::class.java
         startActivity(Intent(this, targetActivity))
         finish()

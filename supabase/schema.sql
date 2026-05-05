@@ -119,19 +119,10 @@ CREATE TABLE IF NOT EXISTS health_tips (
   content    TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
--- SAMPLE DOCTORS
-INSERT INTO doctors (name, specialty, rating, review_count, consultation_fee, experience_years, is_online) VALUES
-  ('Dr. Sarah Nakamya',     'General Practitioner', 4.9, 312,  45000, 12, TRUE),
-  ('Dr. James Okello',      'Cardiologist',         4.8, 245,  90000, 15, TRUE),
-  ('Dr. Grace Atim',        'Paediatrician',        4.7, 198,  55000,  9, TRUE),
-  ('Dr. Moses Wasswa',      'Dermatologist',        4.6, 167,  70000,  8, FALSE),
-  ('Dr. Annet Nabirye',     'OB/GYN Specialist',    4.9, 423,  80000, 14, TRUE),
-  ('Dr. Peter Mugisha',     'Psychiatrist',         4.7, 134,  75000, 11, FALSE),
-  ('Dr. Faith Kiggundu',    'Internal Medicine',    4.8, 289,  65000, 13, TRUE),
-  ('Dr. David Ssemwogerere','Pulmonologist',        4.6, 112,  85000, 10, FALSE),
-  ('Dr. Lydia Nansubuga',   'Ophthalmologist',      4.7, 156,  60000,  7, FALSE),
-  ('Dr. Robert Byaruhanga', 'General Surgeon',      4.8, 201, 100000, 16, FALSE)
-ON CONFLICT DO NOTHING;
+-- NO SAMPLE DOCTORS
+-- Doctors must create accounts through the registration process
+-- Empty database allows only new doctor accounts to be created
+-- This ensures all doctors are properly registered and verified
 -- SAMPLE HEALTH TIPS
 INSERT INTO health_tips (category, icon, title, content) VALUES
   ('hydration',    '[water]',   'Drink 8 Glasses of Water Daily',   'Water regulates body temperature, transports nutrients, and removes waste. Start your day with a glass of water before anything else. Dehydration by just 2% reduces concentration and physical performance significantly.'),

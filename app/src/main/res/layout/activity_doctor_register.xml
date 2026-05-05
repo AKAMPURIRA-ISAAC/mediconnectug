@@ -62,19 +62,30 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Join as a Doctor"
+            android:text="Create Your Doctor Account"
             android:textSize="26sp"
             android:textStyle="bold"
             android:textColor="#1A1A2E" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Help patients get better healthcare"
-            android:textSize="14sp"
-            android:textColor="#888888"
+            android:text="✅ Account registration is MANDATORY\n\nHelp patients get better healthcare"
+            android:textSize="13sp"
+            android:textColor="#D32F2F"
+            android:textStyle="bold"
             android:layout_marginTop="6dp"
-            android:layout_marginBottom="36dp" />
+            android:layout_marginBottom="12dp"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select your hospital, pharmacy, or healthcare facility"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="36dp"
+            android:gravity="center" />
 
         <!-- Full Name Field -->
         <LinearLayout
@@ -206,39 +217,68 @@
                 android:paddingStart="12dp" />
         </LinearLayout>
 
-        <!-- Hospital Field -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:background="@drawable/search_background"
-            android:backgroundTint="#FFFFFF"
-            android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:layout_marginBottom="16dp">
+         <!-- Hospital/Pharmacy/Healthcare Facility Selection -->
+         <LinearLayout
+             android:layout_width="match_parent"
+             android:layout_height="56dp"
+             android:orientation="horizontal"
+             android:background="@drawable/search_background"
+             android:backgroundTint="#FFFFFF"
+             android:gravity="center_vertical"
+             android:paddingStart="16dp"
+             android:paddingEnd="16dp"
+             android:layout_marginBottom="16dp">
 
-            <TextView
-                android:layout_width="24dp"
-                android:layout_height="wrap_content"
-                android:text="🏥"
-                android:textSize="18sp"
-                android:textColor="#AAAAAA"
-                android:gravity="center" />
+             <TextView
+                 android:layout_width="24dp"
+                 android:layout_height="wrap_content"
+                 android:text="🏥"
+                 android:textSize="18sp"
+                 android:textColor="#AAAAAA"
+                 android:gravity="center" />
 
-            <EditText
-                android:id="@+id/etHospital"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:hint="Hospital/Clinic Name"
-                android:inputType="text"
-                android:background="@null"
-                android:paddingStart="12dp"
-                android:textSize="15sp"
-                android:textColor="#212121"
-                android:textColorHint="#BBBBBB"
-                android:importantForAutofill="no" />
-        </LinearLayout>
+             <Spinner
+                 android:id="@+id/etHospital"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:background="@null"
+                 android:paddingStart="12dp" />
+         </LinearLayout>
+
+         <!-- Custom Hospital/Pharmacy Name (shown only when "Other" is selected) -->
+         <LinearLayout
+             android:layout_width="match_parent"
+             android:layout_height="56dp"
+             android:orientation="horizontal"
+             android:background="@drawable/search_background"
+             android:backgroundTint="#FFFFFF"
+             android:gravity="center_vertical"
+             android:paddingStart="16dp"
+             android:paddingEnd="16dp"
+             android:layout_marginBottom="16dp"
+             android:visibility="gone">
+
+             <TextView
+                 android:layout_width="24dp"
+                 android:layout_height="wrap_content"
+                 android:text="✏️"
+                 android:textSize="18sp"
+                 android:textColor="#AAAAAA"
+                 android:gravity="center" />
+
+             <EditText
+                 android:id="@+id/etCustomHospital"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:hint="Enter hospital, pharmacy, or facility name"
+                 android:inputType="text"
+                 android:background="@null"
+                 android:paddingStart="12dp"
+                 android:textSize="15sp"
+                 android:textColor="#212121"
+                 android:textColorHint="#BBBBBB"
+                 android:importantForAutofill="no" />
+         </LinearLayout>
 
         <!-- License Number Field -->
         <LinearLayout

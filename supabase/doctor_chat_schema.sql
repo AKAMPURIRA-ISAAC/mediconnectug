@@ -68,48 +68,10 @@ CREATE INDEX IF NOT EXISTS idx_ai_escalations_status ON ai_escalations(status);
 CREATE INDEX IF NOT EXISTS idx_doctors_email ON doctors(email);
 CREATE INDEX IF NOT EXISTS idx_doctors_online ON doctors(is_online);
 
--- ── 7. Sample doctor accounts with login credentials ────────────────────────
--- Password for all sample doctors: "Doctor@123"
--- Hash generated with bcryptjs (10 rounds)
-UPDATE doctors SET
-  email = 'sarah.nakamya@mediconnect.ug',
-  password_hash = '$2a$10$rKz8YQXZJqVYKGZxN8N4juZqFZJzK8W8BZJqFZJzK8W8BZJqFZJzKe',
-  phone = '+256700123001',
-  license_number = 'UMC/GP/2012/1234',
-  bio = 'Board-certified General Practitioner with 12 years of experience in family medicine. Specializing in preventive care, chronic disease management, and patient education.'
-WHERE name = 'Dr. Sarah Nakamya';
-
-UPDATE doctors SET
-  email = 'james.okello@mediconnect.ug',
-  password_hash = '$2a$10$rKz8YQXZJqVYKGZxN8N4juZqFZJzK8W8BZJqFZJzK8W8BZJqFZJzKe',
-  phone = '+256700123002',
-  license_number = 'UMC/CARD/2010/5678',
-  bio = 'Consultant Cardiologist with expertise in hypertension, heart failure, and arrhythmias. Committed to evidence-based cardiovascular care.'
-WHERE name = 'Dr. James Okello';
-
-UPDATE doctors SET
-  email = 'grace.atim@mediconnect.ug',
-  password_hash = '$2a$10$rKz8YQXZJqVYKGZxN8N4juZqFZJzK8W8BZJqFZJzK8W8BZJqFZJzKe',
-  phone = '+256700123003',
-  license_number = 'UMC/PAED/2015/9012',
-  bio = 'Pediatrician dedicated to child health. Expert in vaccination, growth monitoring, and childhood illnesses.'
-WHERE name = 'Dr. Grace Atim';
-
-UPDATE doctors SET
-  email = 'annet.nabirye@mediconnect.ug',
-  password_hash = '$2a$10$rKz8YQXZJqVYKGZxN8N4juZqFZJzK8W8BZJqFZJzK8W8BZJqFZJzKe',
-  phone = '+256700123005',
-  license_number = 'UMC/OBGYN/2012/3456',
-  bio = 'OB/GYN specialist with 14 years experience in maternal health, prenatal care, and reproductive medicine.'
-WHERE name = 'Dr. Annet Nabirye';
-
-UPDATE doctors SET
-  email = 'faith.kiggundu@mediconnect.ug',
-  password_hash = '$2a$10$rKz8YQXZJqVYKGZxN8N4juZqFZJzK8W8BZJqFZJzK8W8BZJqFZJzKe',
-  phone = '+256700123007',
-  license_number = 'UMC/IM/2013/7890',
-  bio = 'Internal Medicine physician specializing in diabetes, hypertension, and complex medical conditions.'
-WHERE name = 'Dr. Faith Kiggundu';
+-- ── 7. No sample doctor accounts ────────────────────────────────────────────
+-- IMPORTANT: All doctors must register through the registration process
+-- Empty database: Only new doctor accounts created via registration API are allowed
+-- This ensures all doctors are properly verified and authenticated
 
 -- ── 8. Functions for real-time updates ──────────────────────────────────────
 CREATE OR REPLACE FUNCTION update_doctor_last_seen()

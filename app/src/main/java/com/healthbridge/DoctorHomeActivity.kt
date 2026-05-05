@@ -8,7 +8,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,7 +19,7 @@ import com.healthbridge.network.ApiClient
 import com.healthbridge.network.Appointment
 import kotlinx.coroutines.launch
 
-class DoctorHomeActivity : AppCompatActivity() {
+class DoctorHomeActivity : BaseActivity() {
 
     private lateinit var tvDoctorName: TextView
     private lateinit var tvOnlineStatus: TextView

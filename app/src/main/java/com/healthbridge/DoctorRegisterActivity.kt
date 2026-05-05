@@ -4,11 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.healthbridge.network.ApiClient
 import com.healthbridge.network.DoctorRegisterRequest
+import com.healthbridge.util.HealthcareConstants
 import kotlinx.coroutines.launch
 
 class DoctorRegisterActivity : AppCompatActivity() {
@@ -18,7 +20,8 @@ class DoctorRegisterActivity : AppCompatActivity() {
     private lateinit var etEmail: EditText
     private lateinit var etPhone: EditText
     private lateinit var spinnerSpecialty: Spinner
-    private lateinit var etHospital: EditText
+    private lateinit var spinnerHospital: Spinner
+    private lateinit var etCustomHospital: EditText
     private lateinit var etLicenseNumber: EditText
     private lateinit var etPassword: EditText
     private lateinit var etConfirmPassword: EditText
@@ -33,7 +36,8 @@ class DoctorRegisterActivity : AppCompatActivity() {
         etEmail = findViewById(R.id.etEmail)
         etPhone = findViewById(R.id.etPhone)
         spinnerSpecialty = findViewById(R.id.spinnerSpecialty)
-        etHospital = findViewById(R.id.etHospital)
+        spinnerHospital = findViewById(R.id.etHospital)  // Changed to Spinner
+        etCustomHospital = findViewById(R.id.etCustomHospital)  // NEW - for "Other"
         etLicenseNumber = findViewById(R.id.etLicenseNumber)
         etPassword = findViewById(R.id.etPassword)
         etConfirmPassword = findViewById(R.id.etConfirmPassword)
@@ -43,8 +47,9 @@ class DoctorRegisterActivity : AppCompatActivity() {
         val tvLogin = findViewById<TextView>(R.id.tvLogin)
         val btnBack = findViewById<ImageView>(R.id.btnBack)
 
-        // Setup specialty spinner
+        // Setup spinners
         setupSpecialtySpinner()
+        setupHospitalSpinner()
 
         // Password visibility toggle
         tvTogglePassword.setOnClickListener {
@@ -101,15 +106,47 @@ class DoctorRegisterActivity : AppCompatActivity() {
         spinnerSpecialty.adapter = adapter
     }
 
+    private fun setupHospitalSpinner() {
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, HealthcareConstants.HOSPITALS)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerHospital.adapter = adapter
+
+        // Show/hide custom hospital input based on selection
+        spinnerHospital.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedHospital = HealthcareConstants.HOSPITALS[position]
+                if (selectedHospital == "Other - Please Specify") {
+                    etCustomHospital.visibility = View.VISIBLE
+                    etCustomHospital.hint = "Enter hospital or healthcare facility name"
+                } else {
+                    etCustomHospital.visibility = View.GONE
+                    etCustomHospital.text.clear()
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                etCustomHospital.visibility = View.GONE
+            }
+        }
+    }
+
     private fun validateAndRegister() {
         val name = etFullName.text.toString().trim()
         val email = etEmail.text.toString().trim()
         val phone = etPhone.text.toString().trim()
         val specialty = spinnerSpecialty.selectedItem.toString()
-        val hospital = etHospital.text.toString().trim()
+        val selectedHospital = spinnerHospital.selectedItem.toString()
+        val customHospital = etCustomHospital.text.toString().trim()
         val licenseNumber = etLicenseNumber.text.toString().trim()
         val password = etPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
+
+        // Determine final hospital name
+        val hospital = if (selectedHospital == "Other - Please Specify") {
+            customHospital
+        } else {
+            selectedHospital
+        }
 
         when {
             name.isEmpty() -> {
@@ -128,16 +165,20 @@ class DoctorRegisterActivity : AppCompatActivity() {
                 return
             }
             specialty == "Select Specialty" -> {
-                Toast.makeText(this, "Please select a specialty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "❌ Please select your specialty", Toast.LENGTH_SHORT).show()
                 return
             }
-            hospital.isEmpty() -> {
-                etHospital.error = "Enter hospital name"
-                etHospital.requestFocus()
+            selectedHospital == "Select Hospital or Healthcare Facility" -> {
+                Toast.makeText(this, "❌ Please select your hospital, pharmacy, or healthcare facility", Toast.LENGTH_SHORT).show()
+                return
+            }
+            selectedHospital == "Other - Please Specify" && hospital.isEmpty() -> {
+                etCustomHospital.error = "Enter hospital, pharmacy, or facility name"
+                etCustomHospital.requestFocus()
                 return
             }
             licenseNumber.isEmpty() -> {
-                etLicenseNumber.error = "Enter license number"
+                etLicenseNumber.error = "Enter your license number"
                 etLicenseNumber.requestFocus()
                 return
             }
@@ -198,7 +239,7 @@ class DoctorRegisterActivity : AppCompatActivity() {
                     ApiClient.authToken = response.token
 
                     Toast.makeText(this@DoctorRegisterActivity,
-                        "Registration successful! Welcome, Dr. ${response.user?.name}",
+                        "✅ Registration successful! Welcome, Dr. ${response.user?.name}",
                         Toast.LENGTH_LONG).show()
 
                     // Navigate to Doctor Home
@@ -207,7 +248,7 @@ class DoctorRegisterActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@DoctorRegisterActivity,
-                        response.error ?: "Registration failed",
+                        "❌ Registration failed: ${response.error ?: "Unknown error"}",
                         Toast.LENGTH_LONG
                     ).show()
                     resetButton()
@@ -215,7 +256,7 @@ class DoctorRegisterActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Toast.makeText(
                     this@DoctorRegisterActivity,
-                    "Network error: ${e.message}. Please check your connection and try again.",
+                    "❌ Network error: ${e.message}. Please check your connection and try again.",
                     Toast.LENGTH_LONG
                 ).show()
                 resetButton()
@@ -228,4 +269,5 @@ class DoctorRegisterActivity : AppCompatActivity() {
         btnRegister.text = "Register as Doctor"
     }
 }
+
 

@@ -95,7 +95,7 @@ data class ConversationContext(
     var awaitingFollowUp: String? = null   // what we are waiting for next: "duration" | "severity" | null
 )
 
-class ChatActivity : AppCompatActivity() {
+class ChatActivity : BaseActivity() {
 
     private lateinit var rvChat: RecyclerView
     private lateinit var etMessage: EditText
@@ -1577,6 +1577,28 @@ class ChatActivity : AppCompatActivity() {
         // Check conversation history for patterns
         val recentContext = recentUserInputs.toList().takeLast(3).joinToString(" ")
 
+        // Try to detect a health topic from vague input FIRST (before generic responses)
+        val topicHints = mapOf(
+            listOf("heart","cardiac","chest","palpitation","beats") to { respondToBloodPressure() },
+            listOf("stomach","abdomen","belly","gut","bowel","tummy") to { startSymptomCollection("stomach pain diarrhoea nausea") },
+            listOf("head","migraine","brain","skull") to { startSymptomCollection("headache") },
+            listOf("skin","colour","rash","itchy","scratch") to { respondToSkin() },
+            listOf("eye","see","vision","sight","blurry") to { respondToEye() },
+            listOf("tooth","teeth","mouth","jaw","gum","dental") to { respondToDental() },
+            listOf("baby","child","son","daughter","infant","kid") to { respondToChildHealth() },
+            listOf("pregnant","baby coming","expecting","trimester") to { respondToMaternal() },
+            listOf("breath","lungs","asthma","wheez") to { respondToRespiratory() },
+            listOf("stress","worried","anxious","depress","sad","overwhelm") to { respondToMentalHealth() },
+            listOf("eat","food","diet","weight","hungry","nutrition") to { respondToNutrition() }
+        )
+
+        for ((keywords, action) in topicHints) {
+            if (keywords.any { text.contains(it) }) {
+                action()
+                return
+            }
+        }
+
         // Predict user intent from conversation flow
         when {
             recentContext.contains("pain") || recentContext.contains("hurt") -> {
@@ -1612,55 +1634,42 @@ class ChatActivity : AppCompatActivity() {
                 )
                 return
             }
-        }
-
-        // Try to detect a health topic from vague input
-        val topicHints = mapOf(
-            listOf("heart","cardiac","chest","palpitation","beats") to { respondToBloodPressure() },
-            listOf("stomach","abdomen","belly","gut","bowel","tummy") to { startSymptomCollection("stomach pain diarrhoea nausea") },
-            listOf("head","migraine","brain","skull") to { startSymptomCollection("headache") },
-            listOf("skin","colour","rash","itchy","scratch") to { respondToSkin() },
-            listOf("eye","see","vision","sight","blurry") to { respondToEye() },
-            listOf("tooth","teeth","mouth","jaw","gum","dental") to { respondToDental() },
-            listOf("baby","child","son","daughter","infant","kid") to { respondToChildHealth() },
-            listOf("pregnant","baby coming","expecting","trimester") to { respondToMaternal() },
-            listOf("breath","lungs","asthma","wheez") to { respondToRespiratory() },
-            listOf("stress","worried","anxious","depress","sad","overwhelm") to { respondToMentalHealth() },
-            listOf("eat","food","diet","weight","hungry","nutrition") to { respondToNutrition() }
-        )
-
-        for ((keywords, action) in topicHints) {
-            if (keywords.any { text.contains(it) }) {
-                action()
+            text.contains("help") || text.contains("assist") -> {
+                addBotMessage(
+                    "I'm here to help! 🩺\n\n" +
+                    "I can assist you with:\n" +
+                    "• Symptom analysis & health guidance\n" +
+                    "• Connecting you with online doctors\n" +
+                    "• Health tips & wellness advice\n" +
+                    "• Medication information\n" +
+                    "• Emergency guidance\n\n" +
+                    "What specific help do you need today?"
+                )
+                return
+            }
+            text.contains("problem") || text.contains("issue") || text.contains("concern") -> {
+                addBotMessage(
+                    "I'm listening. 👂\n\n" +
+                    "Please describe your concern in detail — the more information you share, the better I can help you. " +
+                    "You can describe symptoms, ask questions, or request to speak with a doctor."
+                )
+                return
+            }
+            text.contains("sick") || text.contains("ill") || text.contains("unwell") -> {
+                addBotMessage(
+                    "I'm sorry you're feeling unwell. 💚\n\n" +
+                    "Let's get to the bottom of this. Please share:\n" +
+                    "• Your symptoms\n" +
+                    "• When they started\n" +
+                    "• Anything that makes them better or worse\n\n" +
+                    "I'll provide guidance and connect you with a doctor if needed."
+                )
                 return
             }
         }
 
-        // ── Context-aware predictive response based on patterns ──
+        // Default response - offer help
         val response = when {
-            text.contains("help") || text.contains("assist") -> {
-                "I'm here to help! 🩺\n\n" +
-                "I can assist you with:\n" +
-                "• Symptom analysis & health guidance\n" +
-                "• Connecting you with online doctors\n" +
-                "• Health tips & wellness advice\n" +
-                "• Medication information\n" +
-                "• Emergency guidance\n\n" +
-                "What specific help do you need today?"
-            }
-            text.contains("problem") || text.contains("issue") || text.contains("concern") -> {
-                "I'm listening. 👂\n\n" +
-                "Please describe your concern in detail — the more information you share, the better I can help you. " +
-                "You can describe symptoms, ask questions, or request to speak with a doctor."
-            }
-            text.contains("sick") || text.contains("ill") || text.contains("unwell") -> {
-                "I'm sorry you're feeling unwell. 💚\n\n" +
-                "Let's get to the bottom of this. Please share:\n" +
-                "• Your symptoms\n" +
-                "• When they started\n" +
-                "• Anything that makes them better or worse\n\n" +
-                "I'll provide guidance and connect you with a doctor if needed."
-            }
             recentUserInputs.size >= 3 -> {
                 // User has been chatting but no clear intent — offer proactive help
                 "I want to make sure I'm helping you effectively! 🎯\n\n" +
@@ -1673,7 +1682,7 @@ class ChatActivity : AppCompatActivity() {
             }
             else -> {
                 "I want to give you the best possible help! 🤔\n\n" +
-                "Could you rephrase that or try:\n\n" +
+                "Could you try:\n\n" +
                 "• Describing your symptoms: _\"I have fever and headache\"_\n" +
                 "• Asking about a condition: _\"Tell me about malaria\"_\n" +
                 "• Requesting help: _\"I want to see a doctor\"_\n" +
