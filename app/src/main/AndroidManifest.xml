@@ -25,6 +25,11 @@
     <!-- Notifications — required on Android 13 (API 33)+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Storage for downloading APK -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Vibration — for notification alerts -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -84,6 +89,14 @@
         <activity android:name=".PharmacyActivity" android:exported="false" />
         <activity android:name=".HospitalActivity" android:exported="false" />
         <activity android:name=".DoctorAppointmentDetailActivity" android:exported="false" />
+
+        <!-- Receiver for APK download completion -->
+        <receiver android:name=".util.UpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

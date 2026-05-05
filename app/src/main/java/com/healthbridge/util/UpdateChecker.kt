@@ -1,8 +1,8 @@
 package com.healthbridge.util
 
 import android.app.Activity
+import android.app.DownloadManager
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
@@ -11,14 +11,14 @@ import org.json.JSONObject
 import java.net.URL
 
 /**
- * Checks GitHub Releases for a newer version and shows an update dialog if one is available.
+ * Checks GitHub Releases for a newer version and downloads the update in the background.
  *
  * How it works:
  *  1. Calls https://api.github.com/repos/AKAMPURIRA-ISAAC/mediconnectug/releases/latest
- *  2. Parses the `tag_name` field (e.g. "v1.0.4")
+ *  2. Parses the `tag_name` and assets for APK download URL
  *  3. Compares with the app's current BuildConfig.VERSION_NAME
- *  4. If newer → shows a non-blocking AlertDialog with "Update Now" / "Later"
- *  5. "Update Now" opens the GitHub Pages download page in the browser
+ *  4. If newer → starts background download using DownloadManager
+ *  5. When download completes, UpdateReceiver shows install dialog
  *
  * The check is silently skipped if:
  *  - No internet connection
@@ -29,10 +29,10 @@ object UpdateChecker {
 
     private const val GITHUB_API =
         "https://api.github.com/repos/AKAMPURIRA-ISAAC/mediconnectug/releases/latest"
-    private const val DOWNLOAD_URL =
-        "https://akampurira-isaac.github.io/mediconnectug/"
     private const val PREF_SKIPPED_VERSION = "update_skipped_version"
     private const val PREF_LAST_CHECK_DATE = "update_last_check_date"
+
+    var downloadId: Long = -1
 
     /**
      * Run this from HomeActivity (lifecycleScope.launch) after the user is logged in.
@@ -61,7 +61,21 @@ object UpdateChecker {
             val releaseNotes = JSONObject(json).optString("body", "")
                 .lines().take(6).joinToString("\n")                     // first 6 lines of notes
 
-            if (latestTag.isBlank()) return
+            // Get APK download URL from assets
+            val assets = JSONObject(json).optJSONArray("assets")
+            var apkUrl = ""
+            if (assets != null) {
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    val name = asset.optString("name", "")
+                    if (name.endsWith(".apk")) {
+                        apkUrl = asset.optString("browser_download_url", "")
+                        break
+                    }
+                }
+            }
+
+            if (latestTag.isBlank() || apkUrl.isBlank()) return
 
             // Strip leading "v" → "1.0.4"
             val latestVersion  = latestTag.trimStart('v')
@@ -80,7 +94,7 @@ object UpdateChecker {
             if (isNewerVersion(latestVersion, currentVersion)) {
                 withContext(Dispatchers.Main) {
                     if (!activity.isFinishing && !activity.isDestroyed) {
-                        showUpdateDialog(activity, latestName.ifBlank { latestTag }, latestVersion, releaseNotes)
+                        showUpdateDialog(activity, latestName.ifBlank { latestTag }, latestVersion, releaseNotes, apkUrl)
                     }
                 }
             }
@@ -93,7 +107,8 @@ object UpdateChecker {
         activity: Activity,
         releaseName: String,
         latestVersion: String,
-        releaseNotes: String
+        releaseNotes: String,
+        apkUrl: String
     ) {
         val currentVersion = try {
             activity.packageManager.getPackageInfo(activity.packageName, 0).versionName
@@ -104,24 +119,36 @@ object UpdateChecker {
             append("🆕 $releaseName is available!\n\n")
             append("Current: v$currentVersion  →  Latest: v$latestVersion\n\n")
             if (releaseNotes.isNotBlank()) {
-                append("What's new:\n$releaseNotes")
+                append("What's new:\n$releaseNotes\n\n")
             }
+            append("The update will download in the background. You'll be prompted to install when ready.")
         }
 
         AlertDialog.Builder(activity)
             .setTitle("Update Available 🚀")
             .setMessage(message)
             .setCancelable(false)
-            .setPositiveButton("⬇️ Update Now") { _, _ ->
-                activity.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(DOWNLOAD_URL))
-                )
+            .setPositiveButton("⬇️ Download Now") { _, _ ->
+                startDownload(activity, apkUrl)
             }
             .setNegativeButton("Later") { _, _ ->
                 // User dismissed dialog - already tracked in PREF_LAST_NOTIFIED_VERSION
                 // Won't show again for this version until they update
             }
             .show()
+    }
+
+    private fun startDownload(activity: Activity, apkUrl: String) {
+        val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val request = DownloadManager.Request(Uri.parse(apkUrl)).apply {
+            setTitle("HealthBridge Update")
+            setDescription("Downloading app update...")
+            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            setDestinationInExternalPublicDir("Download", "healthbridge_update.apk")
+            setAllowedOverMetered(true)
+            setAllowedOverRoaming(true)
+        }
+        downloadId = downloadManager.enqueue(request)
     }
 
     /**
@@ -141,4 +168,3 @@ object UpdateChecker {
         return false
     }
 }
-
