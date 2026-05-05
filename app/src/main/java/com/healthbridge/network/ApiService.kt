@@ -385,8 +385,8 @@ object ApiClient {
      *
      * ─────────────────────────────────────────────────────────────────────
      */
-    private const val USE_LOCAL_BACKEND = true  // ← CHANGE THIS: true=local, false=production
-
+    private const val USE_LOCAL_BACKEND = false  // ← CHANGE THIS: true=local, false=production
+    
     private const val LOCAL_URL = "http://10.0.2.2:3001/"                    // ← Local (Emulator)
     private const val PRODUCTION_URL = "https://mediconnectug.onrender.com/" // ← Production (Render)
 

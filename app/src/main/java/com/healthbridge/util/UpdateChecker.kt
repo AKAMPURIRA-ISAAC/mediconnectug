@@ -118,9 +118,8 @@ object UpdateChecker {
                 )
             }
             .setNegativeButton("Later") { _, _ ->
-                // Remember the user skipped THIS version so we don't ask again today
-                activity.getSharedPreferences("HealthBridge", Context.MODE_PRIVATE)
-                    .edit().putString(PREF_SKIPPED_VERSION, latestVersion).apply()
+                // User dismissed dialog - already tracked in PREF_LAST_NOTIFIED_VERSION
+                // Won't show again for this version until they update
             }
             .show()
     }
