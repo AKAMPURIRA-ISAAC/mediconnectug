@@ -220,7 +220,13 @@ class ChatActivity : BaseActivity() {
                 removeTypingIndicator()
                 result.onSuccess { response ->
                     conversationId = response.conversationId
-                    addBotMessage(response.aiResponse ?: "I understand. Could you tell me a bit more?")
+                    if (response.aiResponse != null && response.aiResponse != "I understand. Could you tell me a bit more?") {
+                        addBotMessage(response.aiResponse)
+                    } else {
+                        // Backend returned generic response - use improved local processing
+                        processUserMessage(text.lowercase())
+                    }
+                    
                     if (!response.suggestedActions.isNullOrEmpty()) {
                         handler.postDelayed({
                             val suggestions = response.suggestedActions.joinToString("\n") { "• $it" }
@@ -550,7 +556,7 @@ class ChatActivity : BaseActivity() {
             if (n != null && n in 1..10) return n
         }
         val wordMap = mapOf("one" to 1,"two" to 2,"three" to 3,"four" to 4,"five" to 5,
-            "six" to 6,"seven" to 7,"eight" to 8,"nine" to 9,"ten" to 10)
+            "six" to 6,"seven" to 7,"eight" to 8,"nine" to 9,"depth" to 10)
         wordMap.forEach { (word, num) -> if (text.contains(word)) return num }
         return null
     }
@@ -670,7 +676,7 @@ class ChatActivity : BaseActivity() {
                 symptom == "cough" -> {
                     lines.add("• 🍯 1 teaspoon of honey in warm water — proven to soothe coughs")
                     lines.add("• 🌿 Inhale steam for 10 minutes, 2–3 times daily")
-                    lines.add("• 🚭 Avoid smoke, dust, and strong odours")
+                    lines.add("• Smoking/Vaping: 🚭 Avoid smoke, dust, and strong odours")
                 }
                 symptom == "nausea" || symptom == "vomiting" -> {
                     lines.add("• 🍋 Ginger tea or ginger biscuits help reduce nausea")
@@ -1682,11 +1688,11 @@ class ChatActivity : BaseActivity() {
             }
             else -> {
                 "I want to give you the best possible help! 🤔\n\n" +
-                "Could you try:\n\n" +
-                "• Describing your symptoms: _\"I have fever and headache\"_\n" +
-                "• Asking about a condition: _\"Tell me about malaria\"_\n" +
-                "• Requesting help: _\"I want to see a doctor\"_\n" +
-                "• Getting tips: _\"Give me a health tip\"_\n\n" +
+                "Could you try rephrasing or:\n\n" +
+                "• Describe your symptoms: _\"I have fever and headache\"_\n" +
+                "• Ask about a condition: _\"Tell me about malaria\"_\n" +
+                "• Request help: _\"I want to see a doctor\"_\n" +
+                "• Get tips: _\"Give me a health tip\"_\n\n" +
                 "Or use the quick buttons below! 👇"
             }
         }
@@ -1803,6 +1809,7 @@ class ChatActivity : BaseActivity() {
                 // API call to create chat session
                 val sessionResponse = ApiClient.instance.createChatSession(
                     CreateChatSessionRequest(
+                        doctorId = doctorId,
                         chiefComplaint = chiefComplaint,
                         symptoms = assessment,
                         urgency = urgency.uppercase()

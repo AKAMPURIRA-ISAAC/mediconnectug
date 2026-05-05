@@ -1,43 +1,59 @@
 package com.healthbridge
 
 import android.content.Intent
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.healthbridge.util.SessionManager
 
 /**
- * BaseActivity - All protected activities should extend this for session management
- *
- * Features:
- * - Automatically checks session timeout on resume
- * - Redirects to login if session expired
- * - Enforces registration requirement
+ * BaseActivity handles global security features like session timeout.
  */
 abstract class BaseActivity : AppCompatActivity() {
 
-    protected lateinit var sessionManager: SessionManager
+    private val TIMEOUT_MILLIS = 15 * 60 * 1000 // 15 minutes
 
     override fun onResume() {
         super.onResume()
+        checkSessionTimeout()
+        updateLastActiveTime()
+    }
 
-        // Initialize session manager
-        sessionManager = SessionManager(this)
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        updateLastActiveTime()
+    }
 
-        // Check if user is registered
-        if (!sessionManager.isRegistrationComplete()) {
-            // User hasn't registered - send to login/register
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
+    private fun updateLastActiveTime() {
+        val prefs = getSharedPreferences("HealthBridgeSecurity", MODE_PRIVATE)
+        prefs.edit().putLong("last_active_time", System.currentTimeMillis()).apply()
+    }
+
+    private fun checkSessionTimeout() {
+        // Skip check for login/register/splash
+        val className = this::class.java.simpleName
+        if (className == "LoginActivity" || className == "RegisterActivity" || 
+            className == "DoctorRegisterActivity" || className == "SplashActivity" || 
+            className == "OnboardingActivity") {
             return
         }
 
-        // Check if session is still valid
-        if (!sessionManager.checkSessionAndRedirectIfNeeded(this)) {
-            // Session has expired or user not logged in - redirected to login
-            return
-        }
+        val prefs = getSharedPreferences("HealthBridgeSecurity", MODE_PRIVATE)
+        val lastActive = prefs.getLong("last_active_time", 0L)
+        val currentTime = System.currentTimeMillis()
 
-        // Session is valid - update the session time
-        sessionManager.updateSessionTime()
+        val mainPrefs = getSharedPreferences("HealthBridge", MODE_PRIVATE)
+        val isLoggedIn = mainPrefs.getBoolean("isLoggedIn", false)
+        
+        if (isLoggedIn && lastActive != 0L && (currentTime - lastActive) > TIMEOUT_MILLIS) {
+            handleSessionExpired()
+        }
+    }
+
+    private fun handleSessionExpired() {
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            putExtra("session_timeout", true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
 }
-
