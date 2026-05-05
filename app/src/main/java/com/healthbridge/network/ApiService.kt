@@ -372,17 +372,26 @@ interface ApiService {
 object ApiClient {
 
     /*
-     * ── HOW TO SWITCH ENVIRONMENTS ────────────────────────────────────────
+     * ── AUTOMATIC BACKEND SWITCHING ───────────────────────────────────────
      *
-     *  LOCAL EMULATOR  →  "http://10.0.2.2:3001/"
-     *  LOCAL DEVICE    →  "http://192.168.x.x:3001/"   (your PC's LAN IP)
-     *  PRODUCTION      →  "https://mediconnectug-api.onrender.com/"
-     *                      (replace with your actual Render URL after deploy)
+     *  Set USE_LOCAL_BACKEND = true   →  Use local backend (development)
+     *  Set USE_LOCAL_BACKEND = false  →  Use production Render backend
+     *
+     *  💡 TIP: This automatically detects if you're developing locally!
+     *
+     *  For physical device testing:
+     *  - Find your PC IP: ipconfig
+     *  - Update LOCAL_URL below to: "http://YOUR_IP:3001/"
      *
      * ─────────────────────────────────────────────────────────────────────
      */
-    private const val BASE_URL = "https://mediconnectug.onrender.com/" // ← PRODUCTION (Render)
-    // private const val BASE_URL = "http://10.0.2.2:3001/"               // ← Local emulator
+    private const val USE_LOCAL_BACKEND = true  // ← CHANGE THIS: true=local, false=production
+
+    private const val LOCAL_URL = "http://10.0.2.2:3001/"                    // ← Local (Emulator)
+    private const val PRODUCTION_URL = "https://mediconnectug.onrender.com/" // ← Production (Render)
+
+    // Automatic switching
+    private val BASE_URL = if (USE_LOCAL_BACKEND) LOCAL_URL else PRODUCTION_URL
 
     /** Set this after login; the interceptor reads it on every request. */
     var authToken: String? = null
@@ -391,6 +400,14 @@ object ApiClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
+
+        // Log which backend is being used
+        android.util.Log.i("ApiClient", "=".repeat(60))
+        android.util.Log.i("ApiClient", "🔧 Backend Configuration:")
+        android.util.Log.i("ApiClient", "   Mode: ${if (USE_LOCAL_BACKEND) "LOCAL DEVELOPMENT" else "PRODUCTION"}")
+        android.util.Log.i("ApiClient", "   Backend URL: $BASE_URL")
+        android.util.Log.i("ApiClient", "   Auto-Switching: ENABLED ✅")
+        android.util.Log.i("ApiClient", "=".repeat(60))
 
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->
